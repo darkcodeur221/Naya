@@ -2,9 +2,9 @@
 /**
  * Plugin Name:       Naya — Assistant IA
  * Plugin URI:        https://github.com/darkcodeur221/Naya
- * Description:       Chatbot IA propulsé par Claude (Anthropic). Widget flottant élégant, page de chat dédiée et mémoire de conversation persistante.
- * Version:           1.0.0
- * Author:            Demba
+ * Description:       Chatbot IA propulsé par DeepSeek — par Deejitcorp. Widget flottant élégant, page de chat dédiée et mémoire de conversation persistante.
+ * Version:           1.1.0
+ * Author:            Deejitcorp
  * Author URI:        https://github.com/darkcodeur221
  * License:           GPL-2.0-or-later
  * Text Domain:       naya
@@ -16,14 +16,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NAYA_VERSION', '1.0.0' );
+define( 'NAYA_VERSION', '1.1.0' );
 define( 'NAYA_PLUGIN_FILE', __FILE__ );
 define( 'NAYA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NAYA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-activator.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-conversations.php';
-require_once NAYA_PLUGIN_DIR . 'includes/class-naya-claude.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-deepseek.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-rest.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-admin.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-frontend.php';

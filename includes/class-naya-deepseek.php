@@ -1,21 +1,19 @@
 <?php
 /**
- * Client API Claude (Anthropic) via wp_remote_post.
- * Le SDK Composer n'est pas utilisé : les plugins WordPress distribués
- * s'appuient sur l'API HTTP de WordPress pour rester sans dépendance.
+ * Client API DeepSeek via wp_remote_post.
+ * DeepSeek expose une API compatible OpenAI (chat completions).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class Naya_Claude {
+class Naya_DeepSeek {
 
-	const API_URL     = 'https://api.anthropic.com/v1/messages';
-	const API_VERSION = '2023-06-01';
+	const API_URL = 'https://api.deepseek.com/chat/completions';
 
 	/**
-	 * Envoie l'historique + le nouveau message à Claude et renvoie la réponse texte.
+	 * Envoie l'historique + le nouveau message à DeepSeek et renvoie la réponse texte.
 	 *
 	 * @param array $messages Historique au format [['role' => ..., 'content' => ...], ...]
 	 * @return string|WP_Error
@@ -25,22 +23,27 @@ class Naya_Claude {
 		$api_key  = isset( $settings['api_key'] ) ? trim( $settings['api_key'] ) : '';
 
 		if ( '' === $api_key ) {
-			return new WP_Error( 'naya_no_key', __( 'La clé API Anthropic n\'est pas configurée. Rendez-vous dans Réglages → Naya.', 'naya' ) );
+			return new WP_Error( 'naya_no_key', __( 'La clé API DeepSeek n\'est pas configurée. Rendez-vous dans Réglages → Naya.', 'naya' ) );
 		}
 
+		// Le prompt système est le premier message du tableau (format OpenAI).
+		array_unshift( $messages, array(
+			'role'    => 'system',
+			'content' => self::system_prompt( $settings ),
+		) );
+
 		$body = array(
-			'model'      => ! empty( $settings['model'] ) ? $settings['model'] : 'claude-opus-4-8',
+			'model'      => ! empty( $settings['model'] ) ? $settings['model'] : 'deepseek-chat',
 			'max_tokens' => ! empty( $settings['max_tokens'] ) ? (int) $settings['max_tokens'] : 1024,
-			'system'     => self::system_prompt( $settings ),
 			'messages'   => $messages,
+			'stream'     => false,
 		);
 
 		$response = wp_remote_post( self::API_URL, array(
 			'timeout' => 90,
 			'headers' => array(
-				'Content-Type'      => 'application/json',
-				'x-api-key'         => $api_key,
-				'anthropic-version' => self::API_VERSION,
+				'Content-Type'  => 'application/json',
+				'Authorization' => 'Bearer ' . $api_key,
 			),
 			'body'    => wp_json_encode( $body ),
 		) );
@@ -57,19 +60,7 @@ class Naya_Claude {
 			return new WP_Error( 'naya_api_error', $message, array( 'status' => $code ) );
 		}
 
-		// Vérifier le stop_reason avant de lire le contenu.
-		if ( isset( $data['stop_reason'] ) && 'refusal' === $data['stop_reason'] ) {
-			return new WP_Error( 'naya_refusal', __( 'Je ne peux pas répondre à cette demande. Essayez de reformuler.', 'naya' ) );
-		}
-
-		$text = '';
-		if ( ! empty( $data['content'] ) && is_array( $data['content'] ) ) {
-			foreach ( $data['content'] as $block ) {
-				if ( isset( $block['type'] ) && 'text' === $block['type'] ) {
-					$text .= $block['text'];
-				}
-			}
-		}
+		$text = isset( $data['choices'][0]['message']['content'] ) ? $data['choices'][0]['message']['content'] : '';
 
 		if ( '' === trim( $text ) ) {
 			return new WP_Error( 'naya_empty', __( 'Réponse vide de l\'assistant.', 'naya' ) );

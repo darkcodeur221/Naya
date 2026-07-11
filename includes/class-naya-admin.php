@@ -46,9 +46,9 @@ class Naya_Admin {
 			$out['api_key'] = $current['api_key'];
 		}
 
-		$allowed_models = array( 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5' );
+		$allowed_models = array( 'deepseek-chat', 'deepseek-reasoner' );
 		$out['model'] = ( isset( $input['model'] ) && in_array( $input['model'], $allowed_models, true ) )
-			? $input['model'] : 'claude-opus-4-8';
+			? $input['model'] : 'deepseek-chat';
 
 		$out['max_tokens']      = isset( $input['max_tokens'] ) ? max( 256, min( 8192, (int) $input['max_tokens'] ) ) : 1024;
 		$out['bot_name']        = isset( $input['bot_name'] ) ? sanitize_text_field( $input['bot_name'] ) : 'Naya';
@@ -68,7 +68,7 @@ class Naya_Admin {
 		}
 
 		$s = wp_parse_args( get_option( 'naya_settings', array() ), array(
-			'api_key' => '', 'model' => 'claude-opus-4-8', 'max_tokens' => 1024,
+			'api_key' => '', 'model' => 'deepseek-chat', 'max_tokens' => 1024,
 			'bot_name' => 'Naya', 'welcome_message' => '', 'system_prompt' => '',
 			'primary_color' => '#6d28d9', 'secondary_color' => '#db2777',
 			'widget_enabled' => 1, 'suggestions' => '',
@@ -91,16 +91,16 @@ class Naya_Admin {
 			<form method="post" action="options.php">
 				<?php settings_fields( 'naya' ); ?>
 
-				<h2><?php esc_html_e( 'Connexion à Claude', 'naya' ); ?></h2>
+				<h2><?php esc_html_e( 'Connexion à DeepSeek', 'naya' ); ?></h2>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><label for="naya_api_key"><?php esc_html_e( 'Clé API Anthropic', 'naya' ); ?></label></th>
+						<th scope="row"><label for="naya_api_key"><?php esc_html_e( 'Clé API DeepSeek', 'naya' ); ?></label></th>
 						<td>
 							<input type="password" id="naya_api_key" name="naya_settings[api_key]" value="" class="regular-text"
-								placeholder="<?php echo $s['api_key'] ? esc_attr__( '•••••••• (clé enregistrée — laisser vide pour conserver)', 'naya' ) : 'sk-ant-…'; ?>" autocomplete="new-password" />
+								placeholder="<?php echo $s['api_key'] ? esc_attr__( '•••••••• (clé enregistrée — laisser vide pour conserver)', 'naya' ) : 'sk-…'; ?>" autocomplete="new-password" />
 							<p class="description">
 								<?php esc_html_e( 'Obtenez une clé sur', 'naya' ); ?>
-								<a href="https://platform.claude.com/" target="_blank">platform.claude.com</a>.
+								<a href="https://platform.deepseek.com/" target="_blank">platform.deepseek.com</a>.
 							</p>
 						</td>
 					</tr>
@@ -108,9 +108,8 @@ class Naya_Admin {
 						<th scope="row"><label for="naya_model"><?php esc_html_e( 'Modèle', 'naya' ); ?></label></th>
 						<td>
 							<select id="naya_model" name="naya_settings[model]">
-								<option value="claude-opus-4-8" <?php selected( $s['model'], 'claude-opus-4-8' ); ?>>Claude Opus 4.8 (recommandé)</option>
-								<option value="claude-sonnet-5" <?php selected( $s['model'], 'claude-sonnet-5' ); ?>>Claude Sonnet 5 (équilibré)</option>
-								<option value="claude-haiku-4-5" <?php selected( $s['model'], 'claude-haiku-4-5' ); ?>>Claude Haiku 4.5 (rapide et économique)</option>
+								<option value="deepseek-chat" <?php selected( $s['model'], 'deepseek-chat' ); ?>>DeepSeek Chat (recommandé)</option>
+								<option value="deepseek-reasoner" <?php selected( $s['model'], 'deepseek-reasoner' ); ?>>DeepSeek Reasoner (raisonnement avancé)</option>
 							</select>
 						</td>
 					</tr>

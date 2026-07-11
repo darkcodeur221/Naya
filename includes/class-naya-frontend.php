@@ -100,7 +100,7 @@ class Naya_Frontend {
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
 					</button>
 				</form>
-				<div class="naya-footer-brand">Propulsé par <strong>Naya</strong></div>
+				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
 			</div>
 		</div>
 		<?php
@@ -135,6 +135,7 @@ class Naya_Frontend {
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
 					</button>
 				</form>
+				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
 			</main>
 		</div>
 		<?php

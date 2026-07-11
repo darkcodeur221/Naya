@@ -2,7 +2,7 @@
 /**
  * Stockage des conversations : c'est la mémoire de Naya.
  * Chaque visiteur est identifié par un cookie (ou son compte WordPress),
- * et l'historique est rejoué à Claude à chaque tour pour garder le contexte.
+ * et l'historique est rejoué à l'IA à chaque tour pour garder le contexte.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -13,7 +13,7 @@ class Naya_Conversations {
 
 	const COOKIE = 'naya_session';
 
-	/** Nombre de messages d'historique renvoyés à Claude comme contexte. */
+	/** Nombre de messages d'historique renvoyés à l'IA comme contexte. */
 	const CONTEXT_WINDOW = 30;
 
 	/**
@@ -124,7 +124,7 @@ class Naya_Conversations {
 	}
 
 	/**
-	 * Historique formaté pour l'API Claude (contexte).
+	 * Historique formaté pour l'API DeepSeek (contexte).
 	 */
 	public static function context( $conversation_id ) {
 		$messages = self::messages( $conversation_id, self::CONTEXT_WINDOW );

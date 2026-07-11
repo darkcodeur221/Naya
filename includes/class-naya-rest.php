@@ -97,11 +97,11 @@ class Naya_Rest {
 			$conversation_id = Naya_Conversations::create();
 		}
 
-		// Mémoriser le message utilisateur, puis rejouer le contexte à Claude.
+		// Mémoriser le message utilisateur, puis rejouer le contexte à l'IA.
 		Naya_Conversations::add_message( $conversation_id, 'user', $message );
 		$context = Naya_Conversations::context( $conversation_id );
 
-		$reply = Naya_Claude::chat( $context );
+		$reply = Naya_DeepSeek::chat( $context );
 
 		if ( is_wp_error( $reply ) ) {
 			$status = $reply->get_error_data();

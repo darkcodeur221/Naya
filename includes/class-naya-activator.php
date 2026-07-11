@@ -69,7 +69,7 @@ class Naya_Activator {
 	private static function default_options() {
 		add_option( 'naya_settings', array(
 			'api_key'         => '',
-			'model'           => 'claude-opus-4-8',
+			'model'           => 'deepseek-chat',
 			'max_tokens'      => 1024,
 			'bot_name'        => 'Naya',
 			'welcome_message' => __( 'Bonjour 👋 Je suis Naya, votre assistante. Comment puis-je vous aider aujourd\'hui ?', 'naya' ),
