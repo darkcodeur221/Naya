@@ -70,7 +70,8 @@ class Naya_DeepSeek {
 	}
 
 	/**
-	 * Prompt système : instructions de l'admin + contexte du site.
+	 * Prompt système : instructions de l'admin + connaissances du site
+	 * + règles de style + garde-fous + notification.
 	 */
 	private static function system_prompt( $settings ) {
 		$prompt = ! empty( $settings['system_prompt'] ) ? $settings['system_prompt'] : '';
@@ -82,6 +83,38 @@ class Naya_DeepSeek {
 			home_url()
 		);
 
-		return $prompt . $site_context . Naya_Security::prompt_guard() . Naya_Notify::prompt_instructions();
+		// Connaissances rédigées par l'admin (offres, tarifs, FAQ…).
+		$custom = '';
+		if ( ! empty( $settings['knowledge'] ) ) {
+			$custom = "\n\n<connaissances_admin>\n" . $settings['knowledge'] . "\n</connaissances_admin>";
+		}
+
+		return $prompt
+			. $site_context
+			. Naya_Knowledge::context()
+			. $custom
+			. self::style_rules( $settings )
+			. Naya_Security::prompt_guard()
+			. Naya_Notify::prompt_instructions();
+	}
+
+	/**
+	 * Règles de réponse : concision, liens réels, redirection WhatsApp.
+	 */
+	private static function style_rules( $settings ) {
+		$whatsapp = ! empty( $settings['whatsapp'] ) ? preg_replace( '/\D/', '', $settings['whatsapp'] ) : '';
+
+		$rules = "\n\n<regles_de_reponse>\n"
+			. "- Sois BREF : 2 à 4 phrases maximum. Pas de listes à rallonge ni de paragraphes multiples, sauf si l'utilisateur demande explicitement des détails.\n"
+			. "- Appuie-toi UNIQUEMENT sur <connaissances_site> et <connaissances_admin>. Si l'information n'y figure pas (un prix, un délai…), ne l'invente jamais : dis-le en une phrase et propose le bon lien ou le contact direct.\n"
+			. "- Quand tu mentionnes une page, une offre ou un produit, donne TOUJOURS son lien réel au format markdown [texte](url), en utilisant exclusivement les URLs listées dans tes connaissances. N'invente jamais d'URL.\n"
+			. "- Ne pose qu'une seule question à la fois, jamais plusieurs.\n";
+
+		if ( $whatsapp ) {
+			$rules .= "- Si le visiteur montre une intention sérieuse (achat, devis, projet concret, urgence), propose-lui de poursuivre directement sur WhatsApp avec ce lien : [Discuter sur WhatsApp](https://wa.me/{$whatsapp}). C'est le canal à privilégier pour les prospects sérieux.\n";
+		}
+
+		$rules .= "</regles_de_reponse>";
+		return $rules;
 	}
 }

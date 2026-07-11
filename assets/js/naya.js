@@ -56,6 +56,32 @@
 		});
 	}
 
+	/**
+	 * Mini-rendu sécurisé des réponses de l'IA :
+	 * tout est échappé, puis seuls les liens [texte](url), les URLs http(s)
+	 * et le **gras** sont convertis en HTML.
+	 */
+	function renderRich(text) {
+		var esc = String(text)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+
+		// Liens markdown [texte](https://…)
+		esc = esc.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+			'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+		// URLs nues (précédées d'un espace, d'une parenthèse ou en début de texte)
+		esc = esc.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,
+			'$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+
+		// **gras**
+		esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+		return esc;
+	}
+
 	/* ------------------------------------------------------------------ */
 
 	function Chat(root, mode) {
@@ -131,7 +157,12 @@
 	Chat.prototype.append = function (role, content) {
 		var div = document.createElement('div');
 		div.className = 'naya-msg naya-msg-' + role;
-		div.textContent = content;
+		if (role === 'assistant') {
+			// Contenu échappé puis enrichi (liens cliquables, gras).
+			div.innerHTML = renderRich(content);
+		} else {
+			div.textContent = content;
+		}
 		this.messagesEl.appendChild(div);
 		this.scroll();
 		return div;

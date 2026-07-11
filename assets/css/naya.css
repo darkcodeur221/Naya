@@ -180,6 +180,15 @@
 	box-shadow: 0 2px 8px rgba(20, 10, 50, 0.05);
 	border-bottom-left-radius: 6px;
 }
+.naya-msg-assistant a {
+	color: var(--naya-c1);
+	font-weight: 600;
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--naya-c1) 40%, transparent);
+	text-underline-offset: 2px;
+	transition: text-decoration-color 0.15s;
+}
+.naya-msg-assistant a:hover { text-decoration-color: var(--naya-c1); }
 .naya-msg-error {
 	align-self: center;
 	background: #fef2f2;

@@ -81,6 +81,8 @@ class Naya_Activator {
 			'suggestions'     => "Quels sont vos services ?\nComment vous contacter ?\nParlez-moi de votre entreprise",
 			'notify_enabled'  => 1,
 			'notify_email'    => get_option( 'admin_email' ),
+			'knowledge'       => '',
+			'whatsapp'        => '221778002341',
 		) );
 	}
 }

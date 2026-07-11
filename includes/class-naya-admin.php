@@ -63,6 +63,12 @@ class Naya_Admin {
 		$notify_email          = isset( $input['notify_email'] ) ? sanitize_email( $input['notify_email'] ) : '';
 		$out['notify_email']   = is_email( $notify_email ) ? $notify_email : get_option( 'admin_email' );
 
+		$out['knowledge'] = isset( $input['knowledge'] ) ? sanitize_textarea_field( $input['knowledge'] ) : '';
+		$out['whatsapp']  = isset( $input['whatsapp'] ) ? preg_replace( '/\D/', '', $input['whatsapp'] ) : '';
+
+		// Le contenu injecté dans le prompt a changé : on reconstruit l'index.
+		Naya_Knowledge::flush();
+
 		return $out;
 	}
 
@@ -77,6 +83,7 @@ class Naya_Admin {
 			'primary_color' => '#6d28d9', 'secondary_color' => '#db2777',
 			'widget_enabled' => 1, 'suggestions' => '',
 			'notify_enabled' => 1, 'notify_email' => get_option( 'admin_email' ),
+			'knowledge' => '', 'whatsapp' => '221778002341',
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -144,6 +151,26 @@ class Naya_Admin {
 					<tr>
 						<th scope="row"><label for="naya_suggestions"><?php esc_html_e( 'Suggestions rapides (une par ligne)', 'naya' ); ?></label></th>
 						<td><textarea id="naya_suggestions" name="naya_settings[suggestions]" rows="3" class="large-text"><?php echo esc_textarea( $s['suggestions'] ); ?></textarea></td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Connaissances', 'naya' ); ?></h2>
+				<p class="description" style="max-width:640px;">
+					<?php esc_html_e( 'Naya lit automatiquement vos pages, articles et produits (titres, liens, résumés) pour répondre avec précision et proposer les bons liens. Complétez ci-dessous avec ce qui n\'est pas sur le site : tarifs, offres, FAQ, horaires…', 'naya' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="naya_knowledge"><?php esc_html_e( 'Connaissances complémentaires', 'naya' ); ?></label></th>
+						<td>
+							<textarea id="naya_knowledge" name="naya_settings[knowledge]" rows="8" class="large-text" placeholder="<?php esc_attr_e( "Exemple :\nSite vitrine 5 pages : à partir de 150 000 FCFA, livré en 2 semaines.\nSite e-commerce : à partir de 400 000 FCFA.\nMaintenance mensuelle : 25 000 FCFA/mois.", 'naya' ); ?>"><?php echo esc_textarea( $s['knowledge'] ); ?></textarea>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_whatsapp"><?php esc_html_e( 'WhatsApp (prospects sérieux)', 'naya' ); ?></label></th>
+						<td>
+							<input type="text" id="naya_whatsapp" name="naya_settings[whatsapp]" value="<?php echo esc_attr( $s['whatsapp'] ); ?>" class="regular-text" placeholder="221778002341" />
+							<p class="description"><?php esc_html_e( 'Format international sans + ni espaces. Naya redirige les prospects sérieux vers ce numéro (lien wa.me). Laisser vide pour désactiver.', 'naya' ); ?></p>
+						</td>
 					</tr>
 				</table>
 
