@@ -1,0 +1,37 @@
+<?php
+/**
+ * Plugin Name:       Naya — Assistant IA
+ * Plugin URI:        https://github.com/darkcodeur221/Naya
+ * Description:       Chatbot IA propulsé par Claude (Anthropic). Widget flottant élégant, page de chat dédiée et mémoire de conversation persistante.
+ * Version:           1.0.0
+ * Author:            Demba
+ * Author URI:        https://github.com/darkcodeur221
+ * License:           GPL-2.0-or-later
+ * Text Domain:       naya
+ * Requires at least: 5.8
+ * Requires PHP:      7.4
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+define( 'NAYA_VERSION', '1.0.0' );
+define( 'NAYA_PLUGIN_FILE', __FILE__ );
+define( 'NAYA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'NAYA_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-activator.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-conversations.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-claude.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-rest.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-admin.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-frontend.php';
+
+register_activation_hook( __FILE__, array( 'Naya_Activator', 'activate' ) );
+
+add_action( 'plugins_loaded', function () {
+	Naya_Rest::init();
+	Naya_Admin::init();
+	Naya_Frontend::init();
+} );

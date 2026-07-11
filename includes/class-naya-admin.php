@@ -1,0 +1,172 @@
+<?php
+/**
+ * Page de réglages : Réglages → Naya.
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Naya_Admin {
+
+	public static function init() {
+		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
+		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( NAYA_PLUGIN_FILE ), array( __CLASS__, 'action_links' ) );
+	}
+
+	public static function action_links( $links ) {
+		array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=naya' ) ) . '">' . __( 'Réglages', 'naya' ) . '</a>' );
+		return $links;
+	}
+
+	public static function menu() {
+		add_options_page(
+			__( 'Naya — Assistant IA', 'naya' ),
+			'Naya',
+			'manage_options',
+			'naya',
+			array( __CLASS__, 'render' )
+		);
+	}
+
+	public static function register_settings() {
+		register_setting( 'naya', 'naya_settings', array(
+			'sanitize_callback' => array( __CLASS__, 'sanitize' ),
+		) );
+	}
+
+	public static function sanitize( $input ) {
+		$current = get_option( 'naya_settings', array() );
+
+		$out = array();
+		$out['api_key'] = isset( $input['api_key'] ) ? trim( sanitize_text_field( $input['api_key'] ) ) : '';
+		// Champ laissé vide alors qu'une clé existe : on conserve la clé actuelle.
+		if ( '' === $out['api_key'] && ! empty( $current['api_key'] ) ) {
+			$out['api_key'] = $current['api_key'];
+		}
+
+		$allowed_models = array( 'claude-opus-4-8', 'claude-sonnet-5', 'claude-haiku-4-5' );
+		$out['model'] = ( isset( $input['model'] ) && in_array( $input['model'], $allowed_models, true ) )
+			? $input['model'] : 'claude-opus-4-8';
+
+		$out['max_tokens']      = isset( $input['max_tokens'] ) ? max( 256, min( 8192, (int) $input['max_tokens'] ) ) : 1024;
+		$out['bot_name']        = isset( $input['bot_name'] ) ? sanitize_text_field( $input['bot_name'] ) : 'Naya';
+		$out['welcome_message'] = isset( $input['welcome_message'] ) ? sanitize_textarea_field( $input['welcome_message'] ) : '';
+		$out['system_prompt']   = isset( $input['system_prompt'] ) ? sanitize_textarea_field( $input['system_prompt'] ) : '';
+		$out['primary_color']   = isset( $input['primary_color'] ) ? sanitize_hex_color( $input['primary_color'] ) : '#6d28d9';
+		$out['secondary_color'] = isset( $input['secondary_color'] ) ? sanitize_hex_color( $input['secondary_color'] ) : '#db2777';
+		$out['widget_enabled']  = empty( $input['widget_enabled'] ) ? 0 : 1;
+		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
+
+		return $out;
+	}
+
+	public static function render() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$s = wp_parse_args( get_option( 'naya_settings', array() ), array(
+			'api_key' => '', 'model' => 'claude-opus-4-8', 'max_tokens' => 1024,
+			'bot_name' => 'Naya', 'welcome_message' => '', 'system_prompt' => '',
+			'primary_color' => '#6d28d9', 'secondary_color' => '#db2777',
+			'widget_enabled' => 1, 'suggestions' => '',
+		) );
+
+		$page_id  = (int) get_option( 'naya_chat_page_id' );
+		$page_url = $page_id ? get_permalink( $page_id ) : '';
+		?>
+		<div class="wrap">
+			<h1>🤖 Naya — Assistant IA</h1>
+
+			<?php if ( $page_url ) : ?>
+				<p>
+					<?php esc_html_e( 'Page de chat dédiée :', 'naya' ); ?>
+					<a href="<?php echo esc_url( $page_url ); ?>" target="_blank"><?php echo esc_html( $page_url ); ?></a>
+					— <?php esc_html_e( 'shortcode :', 'naya' ); ?> <code>[naya_chat]</code>
+				</p>
+			<?php endif; ?>
+
+			<form method="post" action="options.php">
+				<?php settings_fields( 'naya' ); ?>
+
+				<h2><?php esc_html_e( 'Connexion à Claude', 'naya' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="naya_api_key"><?php esc_html_e( 'Clé API Anthropic', 'naya' ); ?></label></th>
+						<td>
+							<input type="password" id="naya_api_key" name="naya_settings[api_key]" value="" class="regular-text"
+								placeholder="<?php echo $s['api_key'] ? esc_attr__( '•••••••• (clé enregistrée — laisser vide pour conserver)', 'naya' ) : 'sk-ant-…'; ?>" autocomplete="new-password" />
+							<p class="description">
+								<?php esc_html_e( 'Obtenez une clé sur', 'naya' ); ?>
+								<a href="https://platform.claude.com/" target="_blank">platform.claude.com</a>.
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_model"><?php esc_html_e( 'Modèle', 'naya' ); ?></label></th>
+						<td>
+							<select id="naya_model" name="naya_settings[model]">
+								<option value="claude-opus-4-8" <?php selected( $s['model'], 'claude-opus-4-8' ); ?>>Claude Opus 4.8 (recommandé)</option>
+								<option value="claude-sonnet-5" <?php selected( $s['model'], 'claude-sonnet-5' ); ?>>Claude Sonnet 5 (équilibré)</option>
+								<option value="claude-haiku-4-5" <?php selected( $s['model'], 'claude-haiku-4-5' ); ?>>Claude Haiku 4.5 (rapide et économique)</option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_max_tokens"><?php esc_html_e( 'Longueur max. des réponses (tokens)', 'naya' ); ?></label></th>
+						<td><input type="number" id="naya_max_tokens" name="naya_settings[max_tokens]" value="<?php echo esc_attr( $s['max_tokens'] ); ?>" min="256" max="8192" step="128" /></td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Personnalité', 'naya' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><label for="naya_bot_name"><?php esc_html_e( 'Nom de l\'assistant', 'naya' ); ?></label></th>
+						<td><input type="text" id="naya_bot_name" name="naya_settings[bot_name]" value="<?php echo esc_attr( $s['bot_name'] ); ?>" class="regular-text" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_welcome"><?php esc_html_e( 'Message d\'accueil', 'naya' ); ?></label></th>
+						<td><textarea id="naya_welcome" name="naya_settings[welcome_message]" rows="2" class="large-text"><?php echo esc_textarea( $s['welcome_message'] ); ?></textarea></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_system"><?php esc_html_e( 'Instructions (prompt système)', 'naya' ); ?></label></th>
+						<td>
+							<textarea id="naya_system" name="naya_settings[system_prompt]" rows="6" class="large-text"><?php echo esc_textarea( $s['system_prompt'] ); ?></textarea>
+							<p class="description"><?php esc_html_e( 'Décrivez votre activité, vos services, votre ton. Plus c\'est précis, mieux Naya conseille vos visiteurs.', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_suggestions"><?php esc_html_e( 'Suggestions rapides (une par ligne)', 'naya' ); ?></label></th>
+						<td><textarea id="naya_suggestions" name="naya_settings[suggestions]" rows="3" class="large-text"><?php echo esc_textarea( $s['suggestions'] ); ?></textarea></td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Apparence', 'naya' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Widget flottant', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[widget_enabled]" value="1" <?php checked( $s['widget_enabled'], 1 ); ?> />
+								<?php esc_html_e( 'Afficher la bulle de chat sur tout le site', 'naya' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_color1"><?php esc_html_e( 'Couleur principale', 'naya' ); ?></label></th>
+						<td><input type="color" id="naya_color1" name="naya_settings[primary_color]" value="<?php echo esc_attr( $s['primary_color'] ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_color2"><?php esc_html_e( 'Couleur secondaire (dégradé)', 'naya' ); ?></label></th>
+						<td><input type="color" id="naya_color2" name="naya_settings[secondary_color]" value="<?php echo esc_attr( $s['secondary_color'] ); ?>" /></td>
+					</tr>
+				</table>
+
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+}
