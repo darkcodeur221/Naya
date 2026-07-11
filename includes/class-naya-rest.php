@@ -78,6 +78,12 @@ class Naya_Rest {
 	}
 
 	public static function chat( WP_REST_Request $request ) {
+		// Bouclier anti-bots : honeypot, user-agent, origine, limites par IP.
+		$shield = Naya_Security::check( $request );
+		if ( is_wp_error( $shield ) ) {
+			return $shield;
+		}
+
 		$message = $request->get_param( 'message' );
 		if ( '' === $message ) {
 			return new WP_Error( 'naya_empty_message', __( 'Message vide.', 'naya' ), array( 'status' => 400 ) );
@@ -112,7 +118,14 @@ class Naya_Rest {
 			);
 		}
 
+		// L'IA a-t-elle signalé une conversation intéressante ? (balise retirée avant affichage)
+		list( $reply, $notify_reason ) = Naya_Notify::extract( $reply );
+
 		Naya_Conversations::add_message( $conversation_id, 'assistant', $reply );
+
+		if ( null !== $notify_reason ) {
+			Naya_Notify::maybe_send( $conversation_id, $notify_reason );
+		}
 
 		return rest_ensure_response( array(
 			'conversation_id' => $conversation_id,

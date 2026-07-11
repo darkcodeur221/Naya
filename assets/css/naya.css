@@ -248,6 +248,15 @@
 	flex-shrink: 0;
 	margin: 0;
 }
+/* Honeypot anti-bots : invisible pour les humains, rempli par les robots. */
+.naya-hp {
+	position: absolute !important;
+	left: -9999px !important;
+	width: 1px; height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
 .naya-input-bar textarea {
 	flex: 1;
 	border: 1.5px solid rgba(0, 0, 0, 0.1);

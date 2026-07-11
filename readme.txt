@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,11 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 1.2.0 =
+* Notification e-mail automatique quand l'IA détecte une conversation intéressante (prospect, devis, réclamation)
+* Bouclier anti-bots : honeypot, filtrage user-agent, contrôle d'origine, limites par IP avec bannissement temporaire
+* Garde-fou anti-injection dans le prompt système
 
 = 1.1.0 =
 * Moteur IA remplacé par DeepSeek (deepseek-chat / deepseek-reasoner)

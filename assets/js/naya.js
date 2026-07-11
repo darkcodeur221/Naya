@@ -14,12 +14,16 @@
 				'X-WP-Nonce': NAYA.nonce
 			};
 		},
-		chat: function (message, conversationId) {
+		chat: function (message, conversationId, honeypot) {
 			return fetch(NAYA.restUrl + '/chat', {
 				method: 'POST',
 				headers: this.headers(),
 				credentials: 'same-origin',
-				body: JSON.stringify({ message: message, conversation_id: conversationId || 0 })
+				body: JSON.stringify({
+					message: message,
+					conversation_id: conversationId || 0,
+					website: honeypot || ''
+				})
 			}).then(handleJson);
 		},
 		conversations: function () {
@@ -165,7 +169,9 @@
 		this.append('user', text);
 		this.typing(true);
 
-		API.chat(text, this.conversationId)
+		var hp = this.form.querySelector('.naya-hp');
+
+		API.chat(text, this.conversationId, hp ? hp.value : '')
 			.then(function (data) {
 				self.typing(false);
 				self.conversationId = data.conversation_id;

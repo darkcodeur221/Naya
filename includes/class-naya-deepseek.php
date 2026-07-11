@@ -82,6 +82,6 @@ class Naya_DeepSeek {
 			home_url()
 		);
 
-		return $prompt . $site_context;
+		return $prompt . $site_context . Naya_Security::prompt_guard() . Naya_Notify::prompt_instructions();
 	}
 }

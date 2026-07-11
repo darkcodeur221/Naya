@@ -59,6 +59,10 @@ class Naya_Admin {
 		$out['widget_enabled']  = empty( $input['widget_enabled'] ) ? 0 : 1;
 		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
 
+		$out['notify_enabled'] = empty( $input['notify_enabled'] ) ? 0 : 1;
+		$notify_email          = isset( $input['notify_email'] ) ? sanitize_email( $input['notify_email'] ) : '';
+		$out['notify_email']   = is_email( $notify_email ) ? $notify_email : get_option( 'admin_email' );
+
 		return $out;
 	}
 
@@ -72,6 +76,7 @@ class Naya_Admin {
 			'bot_name' => 'Naya', 'welcome_message' => '', 'system_prompt' => '',
 			'primary_color' => '#6d28d9', 'secondary_color' => '#db2777',
 			'widget_enabled' => 1, 'suggestions' => '',
+			'notify_enabled' => 1, 'notify_email' => get_option( 'admin_email' ),
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -139,6 +144,24 @@ class Naya_Admin {
 					<tr>
 						<th scope="row"><label for="naya_suggestions"><?php esc_html_e( 'Suggestions rapides (une par ligne)', 'naya' ); ?></label></th>
 						<td><textarea id="naya_suggestions" name="naya_settings[suggestions]" rows="3" class="large-text"><?php echo esc_textarea( $s['suggestions'] ); ?></textarea></td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Notifications e-mail', 'naya' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Conversations intéressantes', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[notify_enabled]" value="1" <?php checked( $s['notify_enabled'], 1 ); ?> />
+								<?php esc_html_e( 'M\'envoyer un e-mail quand l\'IA détecte un prospect, une demande de devis/contact ou une réclamation', 'naya' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'Un seul e-mail par conversation, 10 maximum par jour. La transcription complète est jointe.', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_notify_email"><?php esc_html_e( 'Adresse de réception', 'naya' ); ?></label></th>
+						<td><input type="email" id="naya_notify_email" name="naya_settings[notify_email]" value="<?php echo esc_attr( $s['notify_email'] ); ?>" class="regular-text" /></td>
 					</tr>
 				</table>
 

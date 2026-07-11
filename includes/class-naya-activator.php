@@ -15,7 +15,7 @@ class Naya_Activator {
 		self::default_options();
 	}
 
-	private static function create_tables() {
+	public static function create_tables() {
 		global $wpdb;
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -28,6 +28,7 @@ class Naya_Activator {
 			title VARCHAR(191) NOT NULL DEFAULT '',
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
+			notified_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY session_key (session_key),
 			KEY user_id (user_id)
@@ -78,6 +79,8 @@ class Naya_Activator {
 			'secondary_color' => '#db2777',
 			'widget_enabled'  => 1,
 			'suggestions'     => "Quels sont vos services ?\nComment vous contacter ?\nParlez-moi de votre entreprise",
+			'notify_enabled'  => 1,
+			'notify_email'    => get_option( 'admin_email' ),
 		) );
 	}
 }

@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **DeepSeek** — par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-1.1.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-1.2.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -11,7 +11,9 @@ Chatbot IA propulsé par **DeepSeek** — par **Deejitcorp**. Naya conseille vos
 - **Mémoire de contexte** : chaque conversation est stockée en base de données (`wp_naya_conversations` / `wp_naya_messages`). Les 30 derniers messages sont renvoyés à DeepSeek à chaque tour — Naya se souvient de ce qui a été dit.
 - **Visiteurs anonymes ou connectés** : identification par cookie sécurisé (1 an) ou par compte WordPress.
 - **Personnalisation complète** depuis l'admin : clé API, modèle (DeepSeek Chat / DeepSeek Reasoner), nom du bot, message d'accueil, prompt système, couleurs, suggestions.
-- **Sécurité** : nonces REST, requêtes préparées, vérification de propriété des conversations, limite de débit (20 messages / 5 min / visiteur), clé API jamais exposée côté client.
+- **Alertes e-mail intelligentes** : l'IA détecte les conversations à forte valeur (prospect, demande de devis ou de contact, réclamation) et vous envoie automatiquement la transcription par e-mail — un seul e-mail par conversation, plafond journalier anti-inondation.
+- **Bouclier anti-bots** : champ honeypot invisible, filtrage des user-agents automatisés (curl, python, headless…), contrôle d'origine (Origin/Referer), intervalle minimum entre messages, plafond horaire par IP avec bannissement temporaire d'une heure.
+- **Sécurité** : nonces REST, requêtes préparées, vérification de propriété des conversations, limite de débit (20 messages / 5 min / visiteur), garde-fou anti-injection de prompt (l'IA refuse de changer de rôle ou de révéler ses instructions), clé API jamais exposée côté client.
 
 ## 🚀 Installation
 
@@ -36,6 +38,8 @@ includes/
   class-naya-activator.php            → tables SQL + page dédiée + options par défaut
   class-naya-conversations.php        → mémoire (sessions, conversations, messages, contexte)
   class-naya-deepseek.php             → client API DeepSeek (wp_remote_post)
+  class-naya-security.php             → bouclier anti-bots (honeypot, UA, IP, origine)
+  class-naya-notify.php               → alertes e-mail sur conversations intéressantes
   class-naya-rest.php                 → endpoints REST /naya/v1/*
   class-naya-admin.php                → page de réglages
   class-naya-frontend.php             → widget + page dédiée

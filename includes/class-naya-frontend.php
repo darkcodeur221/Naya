@@ -95,6 +95,7 @@ class Naya_Frontend {
 				<div class="naya-messages" aria-live="polite"></div>
 				<div class="naya-suggestions"></div>
 				<form class="naya-input-bar">
+					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
 					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
@@ -130,6 +131,7 @@ class Naya_Frontend {
 				<div class="naya-messages" aria-live="polite"></div>
 				<div class="naya-suggestions"></div>
 				<form class="naya-input-bar">
+					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
 					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>

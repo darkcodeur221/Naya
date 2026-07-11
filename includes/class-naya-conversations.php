@@ -164,6 +164,23 @@ class Naya_Conversations {
 		) );
 	}
 
+	public static function is_notified( $conversation_id ) {
+		global $wpdb;
+		return (bool) $wpdb->get_var( $wpdb->prepare(
+			"SELECT notified_at FROM {$wpdb->prefix}naya_conversations WHERE id = %d",
+			$conversation_id
+		) );
+	}
+
+	public static function mark_notified( $conversation_id ) {
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->prefix . 'naya_conversations',
+			array( 'notified_at' => current_time( 'mysql' ) ),
+			array( 'id' => $conversation_id )
+		);
+	}
+
 	public static function delete( $conversation_id ) {
 		global $wpdb;
 		$wpdb->delete( $wpdb->prefix . 'naya_messages', array( 'conversation_id' => $conversation_id ) );
