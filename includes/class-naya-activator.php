@@ -29,6 +29,7 @@ class Naya_Activator {
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			notified_at DATETIME NULL,
+			notify_reason VARCHAR(255) NULL,
 			PRIMARY KEY (id),
 			KEY session_key (session_key),
 			KEY user_id (user_id)
@@ -44,8 +45,19 @@ class Naya_Activator {
 			KEY conversation_id (conversation_id)
 		) {$charset};";
 
+		$events = "CREATE TABLE {$wpdb->prefix}naya_events (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			event VARCHAR(40) NOT NULL,
+			session_key VARCHAR(64) NOT NULL DEFAULT '',
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			KEY event (event),
+			KEY created_at (created_at)
+		) {$charset};";
+
 		dbDelta( $conversations );
 		dbDelta( $messages );
+		dbDelta( $events );
 	}
 
 	private static function create_chat_page() {

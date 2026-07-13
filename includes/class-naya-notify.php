@@ -86,7 +86,7 @@ class Naya_Notify {
 		$sent_ok = wp_mail( $to, $subject, implode( "\n", $lines ) );
 
 		if ( $sent_ok ) {
-			Naya_Conversations::mark_notified( $conversation_id );
+			Naya_Conversations::mark_notified( $conversation_id, $reason );
 			set_transient( $cap_key, $sent + 1, DAY_IN_SECONDS );
 		}
 	}

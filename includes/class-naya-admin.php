@@ -16,14 +16,32 @@ class Naya_Admin {
 	}
 
 	public static function action_links( $links ) {
-		array_unshift( $links, '<a href="' . esc_url( admin_url( 'options-general.php?page=naya' ) ) . '">' . __( 'Réglages', 'naya' ) . '</a>' );
+		array_unshift( $links, '<a href="' . esc_url( admin_url( 'admin.php?page=naya' ) ) . '">' . __( 'Réglages', 'naya' ) . '</a>' );
 		return $links;
 	}
 
 	public static function menu() {
-		add_options_page(
-			__( 'Naya — Assistant IA', 'naya' ),
+		add_menu_page(
+			__( 'Naya — Statistiques', 'naya' ),
 			'Naya',
+			'manage_options',
+			'naya-stats',
+			array( 'Naya_Stats', 'render' ),
+			'dashicons-format-chat',
+			58
+		);
+		add_submenu_page(
+			'naya-stats',
+			__( 'Naya — Statistiques', 'naya' ),
+			__( 'Statistiques', 'naya' ),
+			'manage_options',
+			'naya-stats',
+			array( 'Naya_Stats', 'render' )
+		);
+		add_submenu_page(
+			'naya-stats',
+			__( 'Naya — Réglages', 'naya' ),
+			__( 'Réglages', 'naya' ),
 			'manage_options',
 			'naya',
 			array( __CLASS__, 'render' )

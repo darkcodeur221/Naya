@@ -31,6 +31,19 @@ class Naya_Rest {
 			),
 		) );
 
+		register_rest_route( 'naya/v1', '/event', array(
+			'methods'             => 'POST',
+			'callback'            => array( __CLASS__, 'event' ),
+			'permission_callback' => array( __CLASS__, 'check_nonce' ),
+			'args'                => array(
+				'event' => array(
+					'required' => true,
+					'type'     => 'string',
+					'enum'     => Naya_Stats::EVENTS,
+				),
+			),
+		) );
+
 		register_rest_route( 'naya/v1', '/conversations', array(
 			'methods'             => 'GET',
 			'callback'            => array( __CLASS__, 'conversations' ),
@@ -131,6 +144,20 @@ class Naya_Rest {
 			'conversation_id' => $conversation_id,
 			'reply'           => $reply,
 		) );
+	}
+
+	/**
+	 * Trace un événement d'usage (ouverture du widget, clic WhatsApp…).
+	 * Plafonné à 60/heure par visiteur pour éviter le bruit.
+	 */
+	public static function event( WP_REST_Request $request ) {
+		$key   = 'naya_evt_' . md5( Naya_Conversations::session_key() );
+		$count = (int) get_transient( $key );
+		if ( $count < 60 ) {
+			set_transient( $key, $count + 1, HOUR_IN_SECONDS );
+			Naya_Stats::record( $request->get_param( 'event' ) );
+		}
+		return rest_ensure_response( array( 'ok' => true ) );
 	}
 
 	public static function conversations() {

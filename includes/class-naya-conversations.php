@@ -172,11 +172,14 @@ class Naya_Conversations {
 		) );
 	}
 
-	public static function mark_notified( $conversation_id ) {
+	public static function mark_notified( $conversation_id, $reason = '' ) {
 		global $wpdb;
 		$wpdb->update(
 			$wpdb->prefix . 'naya_conversations',
-			array( 'notified_at' => current_time( 'mysql' ) ),
+			array(
+				'notified_at'   => current_time( 'mysql' ),
+				'notify_reason' => mb_substr( (string) $reason, 0, 255 ),
+			),
 			array( 'id' => $conversation_id )
 		);
 	}

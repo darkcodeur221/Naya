@@ -44,6 +44,15 @@
 				headers: this.headers(),
 				credentials: 'same-origin'
 			}).then(handleJson);
+		},
+		track: function (event) {
+			// Statistique d'usage — silencieux en cas d'échec.
+			fetch(NAYA.restUrl + '/event', {
+				method: 'POST',
+				headers: this.headers(),
+				credentials: 'same-origin',
+				body: JSON.stringify({ event: event })
+			}).catch(function () {});
 		}
 	};
 
@@ -127,6 +136,13 @@
 		this.input.addEventListener('input', function () {
 			self.input.style.height = 'auto';
 			self.input.style.height = Math.min(self.input.scrollHeight, 120) + 'px';
+		});
+
+		// Statistiques : clics sur les liens proposés par l'IA (WhatsApp ou autre).
+		this.messagesEl.addEventListener('click', function (e) {
+			var a = e.target.closest ? e.target.closest('a') : null;
+			if (!a) return;
+			API.track(a.href.indexOf('wa.me') !== -1 ? 'whatsapp_click' : 'link_click');
 		});
 	};
 
@@ -335,6 +351,11 @@
 				widget.classList.add('naya-open');
 				win.classList.remove('naya-hidden');
 				chat.input.focus();
+				// Une ouverture comptée par session de navigation.
+				if (!sessionStorage.getItem('naya_opened')) {
+					sessionStorage.setItem('naya_opened', '1');
+					API.track('widget_open');
+				}
 			});
 			win.querySelector('.naya-close').addEventListener('click', function () {
 				widget.classList.remove('naya-open');
