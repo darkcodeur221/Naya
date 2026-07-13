@@ -30,6 +30,9 @@ class Naya_Activator {
 			updated_at DATETIME NOT NULL,
 			notified_at DATETIME NULL,
 			notify_reason VARCHAR(255) NULL,
+			rating TINYINT UNSIGNED NULL,
+			feedback TEXT NULL,
+			rated_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY session_key (session_key),
 			KEY user_id (user_id)

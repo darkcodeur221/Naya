@@ -50,6 +50,25 @@ class Naya_Rest {
 			'permission_callback' => array( __CLASS__, 'check_nonce' ),
 		) );
 
+		register_rest_route( 'naya/v1', '/conversations/(?P<id>\d+)/rate', array(
+			'methods'             => 'POST',
+			'callback'            => array( __CLASS__, 'rate' ),
+			'permission_callback' => array( __CLASS__, 'check_nonce' ),
+			'args'                => array(
+				'rating'  => array(
+					'required' => true,
+					'type'     => 'integer',
+					'minimum'  => 1,
+					'maximum'  => 5,
+				),
+				'comment' => array(
+					'required'          => false,
+					'type'              => 'string',
+					'sanitize_callback' => 'sanitize_textarea_field',
+				),
+			),
+		) );
+
 		register_rest_route( 'naya/v1', '/conversations/(?P<id>\d+)', array(
 			array(
 				'methods'             => 'GET',
@@ -184,6 +203,29 @@ class Naya_Rest {
 				'created_at' => $m->created_at,
 			);
 		}, $messages ) );
+	}
+
+	/**
+	 * Notation de l'agent (1 à 5 étoiles) + commentaire facultatif.
+	 */
+	public static function rate( WP_REST_Request $request ) {
+		$id = (int) $request['id'];
+		if ( ! Naya_Conversations::owns( $id ) ) {
+			return new WP_Error( 'naya_forbidden', __( 'Conversation introuvable.', 'naya' ), array( 'status' => 403 ) );
+		}
+
+		$rating  = (int) $request->get_param( 'rating' );
+		$comment = trim( mb_substr( (string) $request->get_param( 'comment' ), 0, 1000 ) );
+		$first   = ( 0 === Naya_Conversations::rating( $id ) );
+
+		Naya_Conversations::rate( $id, $rating, $comment );
+
+		// Une note faible mérite votre attention immédiate.
+		if ( $first && $rating <= 2 ) {
+			Naya_Notify::low_rating_alert( $id, $rating, $comment );
+		}
+
+		return rest_ensure_response( array( 'ok' => true ) );
 	}
 
 	public static function delete_conversation( WP_REST_Request $request ) {

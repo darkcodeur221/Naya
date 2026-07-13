@@ -184,6 +184,28 @@ class Naya_Conversations {
 		);
 	}
 
+	/** Note déjà attribuée à cette conversation (0 si aucune). */
+	public static function rating( $conversation_id ) {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT rating FROM {$wpdb->prefix}naya_conversations WHERE id = %d",
+			$conversation_id
+		) );
+	}
+
+	public static function rate( $conversation_id, $rating, $feedback = '' ) {
+		global $wpdb;
+		$wpdb->update(
+			$wpdb->prefix . 'naya_conversations',
+			array(
+				'rating'   => max( 1, min( 5, (int) $rating ) ),
+				'feedback' => mb_substr( (string) $feedback, 0, 1000 ),
+				'rated_at' => current_time( 'mysql' ),
+			),
+			array( 'id' => $conversation_id )
+		);
+	}
+
 	public static function delete( $conversation_id ) {
 		global $wpdb;
 		$wpdb->delete( $wpdb->prefix . 'naya_messages', array( 'conversation_id' => $conversation_id ) );

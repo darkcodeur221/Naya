@@ -45,6 +45,14 @@
 				credentials: 'same-origin'
 			}).then(handleJson);
 		},
+		rate: function (id, rating, comment) {
+			return fetch(NAYA.restUrl + '/conversations/' + id + '/rate', {
+				method: 'POST',
+				headers: this.headers(),
+				credentials: 'same-origin',
+				body: JSON.stringify({ rating: rating, comment: comment || '' })
+			}).then(handleJson);
+		},
 		track: function (event) {
 			// Statistique d'usage — silencieux en cas d'échec.
 			fetch(NAYA.restUrl + '/event', {
@@ -144,6 +152,100 @@
 			if (!a) return;
 			API.track(a.href.indexOf('wa.me') !== -1 ? 'whatsapp_click' : 'link_click');
 		});
+
+		// Notation manuelle via l'étoile de l'en-tête.
+		var rateBtn = this.root.querySelector('.naya-rate-btn');
+		if (rateBtn) {
+			rateBtn.addEventListener('click', function () {
+				self.showRating(false);
+			});
+		}
+	};
+
+	/* ---------------------- Notation de l'agent ----------------------- */
+
+	Chat.prototype.armRatingInvite = function () {
+		var self = this;
+		clearTimeout(this.ratingTimer);
+		// Après 60 s sans nouvel échange, on invite discrètement à noter.
+		this.ratingTimer = setTimeout(function () {
+			self.showRating(true);
+		}, 60000);
+	};
+
+	Chat.prototype.showRating = function (auto) {
+		var self = this;
+		if (!this.conversationId) return;
+		if (sessionStorage.getItem('naya_rated_' + this.conversationId)) return;
+		if (this.messagesEl.querySelector('.naya-rating')) return;
+		if (auto && this.ratingInvited) return;
+		this.ratingInvited = true;
+
+		var card = document.createElement('div');
+		card.className = 'naya-rating';
+
+		var title = document.createElement('div');
+		title.className = 'naya-rating-title';
+		title.textContent = NAYA.i18n.rateTitle;
+		card.appendChild(title);
+
+		var starsRow = document.createElement('div');
+		starsRow.className = 'naya-stars';
+		var value = 0;
+		var stars = [];
+		for (var i = 1; i <= 5; i++) {
+			(function (n) {
+				var s = document.createElement('button');
+				s.type = 'button';
+				s.textContent = '★';
+				s.setAttribute('aria-label', n + '/5');
+				s.addEventListener('click', function () {
+					value = n;
+					stars.forEach(function (el, idx) {
+						el.classList.toggle('naya-star-on', idx < n);
+					});
+					form.style.display = 'flex';
+				});
+				stars.push(s);
+				starsRow.appendChild(s);
+			})(i);
+		}
+		card.appendChild(starsRow);
+
+		var form = document.createElement('div');
+		form.className = 'naya-rating-form';
+		form.style.display = 'none';
+
+		var comment = document.createElement('textarea');
+		comment.rows = 2;
+		comment.placeholder = NAYA.i18n.ratePlaceholder;
+		form.appendChild(comment);
+
+		var send = document.createElement('button');
+		send.type = 'button';
+		send.textContent = NAYA.i18n.rateSend;
+		send.addEventListener('click', function () {
+			if (!value) return;
+			send.disabled = true;
+			API.rate(self.conversationId, value, comment.value.trim())
+				.then(function () {
+					sessionStorage.setItem('naya_rated_' + self.conversationId, '1');
+					card.innerHTML = '';
+					var thanks = document.createElement('div');
+					thanks.className = 'naya-rating-title';
+					thanks.textContent = NAYA.i18n.rateThanks;
+					card.appendChild(thanks);
+					setTimeout(function () { card.remove(); }, 4000);
+				})
+				.catch(function () {
+					send.disabled = false;
+				});
+		});
+		form.appendChild(send);
+		card.appendChild(form);
+
+		this.messagesEl.appendChild(card);
+		this.scroll();
 	};
 
 	Chat.prototype.showWelcome = function () {
@@ -224,6 +326,7 @@
 				self.conversationId = data.conversation_id;
 				sessionStorage.setItem('naya_conv', String(data.conversation_id));
 				self.append('assistant', data.reply);
+				self.armRatingInvite();
 				if (self.mode === 'page') self.refreshList();
 			})
 			.catch(function (err) {

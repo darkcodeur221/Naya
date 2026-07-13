@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,12 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 1.5.0 =
+* Notation de l'agent (1 à 5 étoiles) avec commentaire facultatif : bouton ★ dans l'en-tête et invitation automatique après 60 s d'inactivité
+* Score de satisfaction (CSAT) dans le tableau de bord : note moyenne, % de satisfaits, nombre d'avis, derniers commentaires
+* Alerte e-mail immédiate en cas de note faible (1-2 étoiles) avec la transcription
+* Notes et commentaires ajoutés à l'export CSV
 
 = 1.4.0 =
 * Tableau de bord statistiques (menu « Naya » dans l'admin) : conversations, messages, visiteurs uniques, engagement, leads détectés et taux de conversion, ouvertures du widget, clics WhatsApp

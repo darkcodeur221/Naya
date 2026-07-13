@@ -57,6 +57,10 @@ class Naya_Stats {
 		$opens         = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'widget_open' AND created_at >= %s", $since ) );
 		$whatsapp      = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'whatsapp_click' AND created_at >= %s", $since ) );
 
+		$ratings   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$conv} WHERE rating IS NOT NULL AND rated_at >= %s", $since ) );
+		$avg       = (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(rating) FROM {$conv} WHERE rating IS NOT NULL AND rated_at >= %s", $since ) );
+		$satisfied = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$conv} WHERE rating >= 4 AND rated_at >= %s", $since ) );
+
 		return array(
 			'conversations' => $conversations,
 			'messages'      => $messages,
@@ -67,6 +71,9 @@ class Naya_Stats {
 			'opens'         => $opens,
 			'open_rate'     => $opens ? round( 100 * $conversations / $opens, 1 ) : 0,
 			'whatsapp'      => $whatsapp,
+			'ratings'       => $ratings,
+			'avg_rating'    => $ratings ? round( $avg, 1 ) : 0,
+			'csat'          => $ratings ? round( 100 * $satisfied / $ratings ) : 0,
 		);
 	}
 
@@ -132,6 +139,17 @@ class Naya_Stats {
 		);
 	}
 
+	/** Derniers avis laissés par les visiteurs. */
+	public static function latest_reviews() {
+		global $wpdb;
+		return $wpdb->get_results(
+			"SELECT id, title, rating, feedback, rated_at
+			 FROM {$wpdb->prefix}naya_conversations
+			 WHERE rating IS NOT NULL
+			 ORDER BY rated_at DESC LIMIT 10"
+		);
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Export CSV                                                          */
 	/* ------------------------------------------------------------------ */
@@ -143,7 +161,7 @@ class Naya_Stats {
 
 		global $wpdb;
 		$rows = $wpdb->get_results(
-			"SELECT c.id, c.title, c.created_at, c.updated_at, c.notified_at, c.notify_reason,
+			"SELECT c.id, c.title, c.created_at, c.updated_at, c.notified_at, c.notify_reason, c.rating, c.feedback,
 				(SELECT COUNT(*) FROM {$wpdb->prefix}naya_messages m WHERE m.conversation_id = c.id AND m.role = 'user') AS visitor_messages
 			 FROM {$wpdb->prefix}naya_conversations c ORDER BY c.created_at DESC",
 			ARRAY_A
@@ -155,7 +173,7 @@ class Naya_Stats {
 
 		$out = fopen( 'php://output', 'w' );
 		fputs( $out, "\xEF\xBB\xBF" ); // BOM UTF-8 pour Excel.
-		fputcsv( $out, array( 'ID', 'Sujet', 'Créée le', 'Dernier échange', 'Messages visiteur', 'Lead', 'Raison du lead' ), ';' );
+		fputcsv( $out, array( 'ID', 'Sujet', 'Créée le', 'Dernier échange', 'Messages visiteur', 'Lead', 'Raison du lead', 'Note', 'Commentaire' ), ';' );
 		foreach ( $rows as $r ) {
 			fputcsv( $out, array(
 				$r['id'],
@@ -165,6 +183,8 @@ class Naya_Stats {
 				$r['visitor_messages'],
 				$r['notified_at'] ? 'Oui' : 'Non',
 				$r['notify_reason'],
+				$r['rating'],
+				$r['feedback'],
 			), ';' );
 		}
 		fclose( $out );
@@ -185,6 +205,7 @@ class Naya_Stats {
 		$hours     = self::per_hour();
 		$questions = self::top_questions();
 		$leads     = self::latest_leads();
+		$reviews   = self::latest_reviews();
 
 		$max_day  = max( 1, max( $days ) );
 		$max_hour = max( 1, max( $hours ) );
@@ -232,6 +253,7 @@ class Naya_Stats {
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( number_format_i18n( $k['visitors'] ) ); ?></div><div class="l"><?php esc_html_e( 'Visiteurs uniques', 'naya' ); ?></div></div>
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( $k['engagement'] ); ?></div><div class="l"><?php esc_html_e( 'Messages / conversation', 'naya' ); ?></div></div>
 				<div class="naya-kpi hot"><div class="n"><?php echo esc_html( number_format_i18n( $k['leads'] ) ); ?></div><div class="l"><?php esc_html_e( 'Leads détectés', 'naya' ); ?> · <?php echo esc_html( $k['lead_rate'] ); ?>%</div></div>
+				<div class="naya-kpi"><div class="n"><?php echo $k['ratings'] ? '★ ' . esc_html( $k['avg_rating'] ) . '/5' : '—'; ?></div><div class="l"><?php esc_html_e( 'Satisfaction', 'naya' ); ?> · <?php echo esc_html( $k['csat'] ); ?>% <?php esc_html_e( 'satisfaits', 'naya' ); ?> (<?php echo esc_html( number_format_i18n( $k['ratings'] ) ); ?> <?php esc_html_e( 'avis', 'naya' ); ?>)</div></div>
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( number_format_i18n( $k['whatsapp'] ) ); ?></div><div class="l"><?php esc_html_e( 'Clics WhatsApp', 'naya' ); ?></div></div>
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( number_format_i18n( $k['opens'] ) ); ?></div><div class="l"><?php esc_html_e( 'Ouvertures du widget', 'naya' ); ?> · <?php echo esc_html( $k['open_rate'] ); ?>% <?php esc_html_e( 'engagés', 'naya' ); ?></div></div>
 			</div>
@@ -300,6 +322,28 @@ class Naya_Stats {
 						<p class="naya-empty"><?php esc_html_e( 'Pas encore de questions.', 'naya' ); ?></p>
 					<?php endif; ?>
 				</div>
+			</div>
+
+			<div class="naya-panel" style="margin-bottom: 24px;">
+				<h2>⭐ <?php esc_html_e( 'Derniers avis des visiteurs', 'naya' ); ?></h2>
+				<?php if ( $reviews ) : ?>
+					<ul class="naya-list">
+						<?php foreach ( $reviews as $review ) : ?>
+							<li>
+								<span style="color:#f5b301;letter-spacing:2px;"><?php echo esc_html( str_repeat( '★', (int) $review->rating ) . str_repeat( '☆', 5 - (int) $review->rating ) ); ?></span>
+								<?php if ( $review->feedback ) : ?>
+									— « <?php echo esc_html( $review->feedback ); ?> »
+								<?php endif; ?>
+								<span class="meta">
+									<?php echo esc_html( $review->title ? $review->title : sprintf( __( 'Conversation n°%d', 'naya' ), $review->id ) ); ?>
+									· <?php echo esc_html( date_i18n( 'j F Y à H:i', strtotime( $review->rated_at ) ) ); ?>
+								</span>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<p class="naya-empty"><?php esc_html_e( 'Aucun avis pour le moment.', 'naya' ); ?></p>
+				<?php endif; ?>
 			</div>
 
 			<p>

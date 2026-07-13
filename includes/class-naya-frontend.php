@@ -54,6 +54,10 @@ class Naya_Frontend {
 				'thinking'    => __( 'Naya réfléchit…', 'naya' ),
 				'deleteConf'  => __( 'Supprimer cette conversation ?', 'naya' ),
 				'emptyList'   => __( 'Aucune conversation pour le moment.', 'naya' ),
+				'rateTitle'   => __( 'Cette conversation vous a-t-elle aidé ?', 'naya' ),
+				'ratePlaceholder' => __( 'Un commentaire ? (facultatif)', 'naya' ),
+				'rateSend'    => __( 'Envoyer mon avis', 'naya' ),
+				'rateThanks'  => __( 'Merci pour votre avis ! 💜', 'naya' ),
 			),
 		) );
 
@@ -89,6 +93,7 @@ class Naya_Frontend {
 						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
 						<span class="naya-status"><span class="naya-dot"></span><?php esc_html_e( 'En ligne', 'naya' ); ?></span>
 					</div>
+					<button class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
 					<a class="naya-expand" href="<?php echo esc_url( get_permalink( (int) get_option( 'naya_chat_page_id' ) ) ); ?>" title="<?php esc_attr_e( 'Ouvrir en plein écran', 'naya' ); ?>">⛶</a>
 					<button class="naya-close" aria-label="<?php esc_attr_e( 'Fermer', 'naya' ); ?>">✕</button>
 				</div>
@@ -127,6 +132,7 @@ class Naya_Frontend {
 						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
 						<span class="naya-status"><span class="naya-dot"></span><?php esc_html_e( 'En ligne', 'naya' ); ?></span>
 					</div>
+					<button class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
 				</div>
 				<div class="naya-messages" aria-live="polite"></div>
 				<div class="naya-suggestions"></div>

@@ -90,4 +90,36 @@ class Naya_Notify {
 			set_transient( $cap_key, $sent + 1, DAY_IN_SECONDS );
 		}
 	}
+
+	/**
+	 * Alerte immédiate quand un visiteur laisse une note faible (1-2 étoiles) :
+	 * c'est le signal qualité le plus précieux à traiter à chaud.
+	 */
+	public static function low_rating_alert( $conversation_id, $rating, $comment ) {
+		$settings = get_option( 'naya_settings', array() );
+		if ( empty( $settings['notify_enabled'] ) ) {
+			return;
+		}
+
+		$to = ! empty( $settings['notify_email'] ) && is_email( $settings['notify_email'] )
+			? $settings['notify_email']
+			: get_option( 'admin_email' );
+
+		$bot_name = ! empty( $settings['bot_name'] ) ? $settings['bot_name'] : 'Naya';
+		$subject  = sprintf( '⚠️ [%s] Note faible pour %s : %d/5', get_bloginfo( 'name' ), $bot_name, $rating );
+
+		$lines   = array();
+		$lines[] = sprintf( 'Note : %d/5', $rating );
+		$lines[] = sprintf( 'Commentaire : %s', $comment ? $comment : '—' );
+		$lines[] = '';
+		$lines[] = '--- Transcription ---';
+		foreach ( Naya_Conversations::messages( $conversation_id ) as $m ) {
+			$who     = 'user' === $m->role ? 'Visiteur' : $bot_name;
+			$lines[] = sprintf( '[%s] %s : %s', $m->created_at, $who, $m->content );
+		}
+		$lines[] = '';
+		$lines[] = sprintf( 'Conversation n°%d — %s', $conversation_id, home_url() );
+
+		wp_mail( $to, $subject, implode( "\n", $lines ) );
+	}
 }
