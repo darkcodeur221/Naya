@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,12 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 1.6.1 =
+* Correctif : la croix de fermeture de la bulle d'accroche se retrouvait dans le flux (gros carré) sur les thèmes qui stylent les boutons en `!important`
+* Blindage du widget contre les styles de thème (positions, tailles, majuscules, ombres) sur le bouton flottant, la bulle, l'en-tête, les suggestions et le champ d'envoi
+* Design de l'accroche revu : avatar rond avec pastille « en ligne », queue de bulle orientée vers le bouton, croix discrète au survol, ombres adoucies
+* Les ombres du bouton flottant suivent désormais la couleur choisie au lieu d'un violet figé
 
 = 1.6.0 =
 * Incitation à la conversation : bulle d'accroche animée, badge de notification et frétillement périodique du bouton

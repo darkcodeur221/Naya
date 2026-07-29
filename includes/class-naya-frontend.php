@@ -87,12 +87,12 @@ class Naya_Frontend {
 		<div id="naya-widget" data-naya-mode="widget">
 			<?php if ( ! empty( $s['teaser_enabled'] ) && ! empty( $s['teaser_message'] ) ) : ?>
 				<div id="naya-teaser" class="naya-hidden" role="button" tabindex="0">
-					<button class="naya-teaser-close" aria-label="<?php esc_attr_e( 'Masquer', 'naya' ); ?>">✕</button>
-					<div class="naya-teaser-avatar">✦</div>
+					<div class="naya-teaser-avatar" aria-hidden="true">✦</div>
 					<div class="naya-teaser-body">
 						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
 						<p><?php echo esc_html( $s['teaser_message'] ); ?></p>
 					</div>
+					<button type="button" class="naya-teaser-close" aria-label="<?php esc_attr_e( 'Masquer', 'naya' ); ?>">✕</button>
 				</div>
 			<?php endif; ?>
 
