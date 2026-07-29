@@ -21,7 +21,7 @@ class Naya_Stats {
 	/* Collecte des événements front (widget ouvert, clic WhatsApp…)       */
 	/* ------------------------------------------------------------------ */
 
-	const EVENTS = array( 'widget_open', 'whatsapp_click', 'link_click' );
+	const EVENTS = array( 'widget_open', 'whatsapp_click', 'link_click', 'teaser_shown', 'teaser_click' );
 
 	public static function record( $event ) {
 		global $wpdb;
@@ -57,6 +57,9 @@ class Naya_Stats {
 		$opens         = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'widget_open' AND created_at >= %s", $since ) );
 		$whatsapp      = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'whatsapp_click' AND created_at >= %s", $since ) );
 
+		$teasers   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'teaser_shown' AND created_at >= %s", $since ) );
+		$t_clicks  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$evt} WHERE event = 'teaser_click' AND created_at >= %s", $since ) );
+
 		$ratings   = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$conv} WHERE rating IS NOT NULL AND rated_at >= %s", $since ) );
 		$avg       = (float) $wpdb->get_var( $wpdb->prepare( "SELECT AVG(rating) FROM {$conv} WHERE rating IS NOT NULL AND rated_at >= %s", $since ) );
 		$satisfied = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$conv} WHERE rating >= 4 AND rated_at >= %s", $since ) );
@@ -71,6 +74,9 @@ class Naya_Stats {
 			'opens'         => $opens,
 			'open_rate'     => $opens ? round( 100 * $conversations / $opens, 1 ) : 0,
 			'whatsapp'      => $whatsapp,
+			'teasers'       => $teasers,
+			'teaser_clicks' => $t_clicks,
+			'teaser_rate'   => $teasers ? round( 100 * $t_clicks / $teasers, 1 ) : 0,
 			'ratings'       => $ratings,
 			'avg_rating'    => $ratings ? round( $avg, 1 ) : 0,
 			'csat'          => $ratings ? round( 100 * $satisfied / $ratings ) : 0,
@@ -256,6 +262,7 @@ class Naya_Stats {
 				<div class="naya-kpi"><div class="n"><?php echo $k['ratings'] ? '★ ' . esc_html( $k['avg_rating'] ) . '/5' : '—'; ?></div><div class="l"><?php esc_html_e( 'Satisfaction', 'naya' ); ?> · <?php echo esc_html( $k['csat'] ); ?>% <?php esc_html_e( 'satisfaits', 'naya' ); ?> (<?php echo esc_html( number_format_i18n( $k['ratings'] ) ); ?> <?php esc_html_e( 'avis', 'naya' ); ?>)</div></div>
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( number_format_i18n( $k['whatsapp'] ) ); ?></div><div class="l"><?php esc_html_e( 'Clics WhatsApp', 'naya' ); ?></div></div>
 				<div class="naya-kpi"><div class="n"><?php echo esc_html( number_format_i18n( $k['opens'] ) ); ?></div><div class="l"><?php esc_html_e( 'Ouvertures du widget', 'naya' ); ?> · <?php echo esc_html( $k['open_rate'] ); ?>% <?php esc_html_e( 'engagés', 'naya' ); ?></div></div>
+				<div class="naya-kpi"><div class="n"><?php echo esc_html( $k['teaser_rate'] ); ?>%</div><div class="l"><?php esc_html_e( 'Accroches cliquées', 'naya' ); ?> · <?php echo esc_html( number_format_i18n( $k['teaser_clicks'] ) ); ?>/<?php echo esc_html( number_format_i18n( $k['teasers'] ) ); ?></div></div>
 			</div>
 
 			<div class="naya-panels">

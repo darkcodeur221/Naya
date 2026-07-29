@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-1.5.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-1.6.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -11,6 +11,7 @@ Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond �
 - **Mémoire de contexte** : chaque conversation est stockée en base de données (`wp_naya_conversations` / `wp_naya_messages`). Les 30 derniers messages sont renvoyés à DeepSeek à chaque tour — Naya se souvient de ce qui a été dit.
 - **Visiteurs anonymes ou connectés** : identification par cookie sécurisé (1 an) ou par compte WordPress.
 - **Personnalisation complète** depuis l'admin : clé API, modèle (DeepSeek Chat / DeepSeek Reasoner), nom du bot, message d'accueil, prompt système, couleurs, suggestions.
+- **Incitation à la conversation** : une bulle d'accroche animée surgit à côté du bouton, accompagnée d'un badge de notification et d'un frétillement périodique, pour pousser les visiteurs à écrire. Elle se déclenche au premier signal d'intérêt — temps passé, défilement au-delà de 45 %, ou intention de sortie — ne s'impose qu'une fois par visite, et se retire d'elle-même après 20 s. Message et délai configurables ; taux de clic mesuré dans le tableau de bord.
 - **Notation de l'agent (CSAT)** : les visiteurs notent la conversation de 1 à 5 étoiles avec un commentaire facultatif — bouton ★ dans l'en-tête du chat et invitation automatique discrète après 60 s d'inactivité. Note moyenne, % de satisfaits et derniers avis dans le tableau de bord ; **alerte e-mail immédiate en cas de note faible** (1-2 étoiles) avec la transcription.
 - **Tableau de bord statistiques** (menu « Naya » dans l'admin, sur 30 jours) : conversations, messages, visiteurs uniques, engagement (messages/conversation), **leads détectés et taux de conversion**, ouvertures du widget, clics WhatsApp — plus un graphique d'activité par jour, les heures de pointe, le top des questions posées, la liste des derniers leads avec la raison détectée par l'IA, et un **export CSV**.
 - **Nourrie du contenu du site** : Naya lit automatiquement vos pages, articles et produits WooCommerce (titres, liens, résumés, prix) et ne répond qu'à partir de ces connaissances — réponses courtes, précises, avec de **vrais liens cliquables**, jamais d'URL inventée. Un champ « Connaissances complémentaires » permet d'ajouter tarifs, offres et FAQ.

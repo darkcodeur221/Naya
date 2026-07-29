@@ -60,6 +60,117 @@
 
 #naya-widget.naya-open #naya-launcher { transform: scale(0); pointer-events: none; }
 
+/* Frétillement périodique : attire l'œil sans être agressif. */
+#naya-launcher.naya-wiggle { animation: naya-wiggle 0.9s ease-in-out; }
+@keyframes naya-wiggle {
+	0%, 100% { transform: rotate(0) scale(1); }
+	15% { transform: rotate(-14deg) scale(1.1); }
+	30% { transform: rotate(12deg) scale(1.1); }
+	45% { transform: rotate(-9deg) scale(1.06); }
+	60% { transform: rotate(7deg) scale(1.04); }
+	75% { transform: rotate(-4deg) scale(1.02); }
+}
+
+/* Badge de notification sur la bulle */
+.naya-badge {
+	position: absolute;
+	top: -3px;
+	right: -3px;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	border-radius: 11px;
+	background: #ef4444;
+	color: #fff;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 22px;
+	text-align: center;
+	box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+	transform: scale(0);
+	transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	pointer-events: none;
+}
+#naya-widget.naya-nudged .naya-badge { transform: scale(1); }
+
+/* --------------------------------------------------------------------------
+   Bulle d'accroche (incitation à la conversation)
+   -------------------------------------------------------------------------- */
+#naya-teaser {
+	position: fixed;
+	right: 24px;
+	bottom: 100px;
+	z-index: 99998;
+	width: 290px;
+	max-width: calc(100vw - 48px);
+	display: flex;
+	align-items: flex-start;
+	gap: 11px;
+	padding: 14px 16px;
+	background: var(--naya-bg);
+	border-radius: 18px;
+	border-bottom-right-radius: 6px;
+	box-shadow: 0 16px 40px -8px rgba(30, 10, 60, 0.3);
+	cursor: pointer;
+	transform-origin: bottom right;
+	animation: naya-teaser-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+#naya-teaser.naya-hidden { display: none; }
+#naya-teaser:hover { transform: translateY(-3px); box-shadow: 0 22px 50px -8px rgba(30, 10, 60, 0.4); }
+#naya-teaser.naya-teaser-out { animation: naya-teaser-out 0.28s ease-in forwards; }
+
+@keyframes naya-teaser-in {
+	0% { opacity: 0; transform: translateY(16px) scale(0.85); }
+	100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes naya-teaser-out {
+	to { opacity: 0; transform: translateY(10px) scale(0.9); }
+}
+
+.naya-teaser-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 11px;
+	background: var(--naya-grad);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	flex-shrink: 0;
+}
+.naya-teaser-body { min-width: 0; }
+.naya-teaser-body strong { display: block; font-size: 12.5px; color: var(--naya-c1); margin-bottom: 2px; }
+.naya-teaser-body p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--naya-text); }
+.naya-teaser-close {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	border: none;
+	background: #fff;
+	color: var(--naya-muted);
+	font-size: 11px;
+	cursor: pointer;
+	box-shadow: 0 2px 8px rgba(20, 10, 50, 0.18);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.15s, color 0.15s;
+}
+.naya-teaser-close:hover { background: #f1f0f6; color: var(--naya-text); }
+
+#naya-widget.naya-open #naya-teaser { display: none; }
+
+/* Accessibilité : on coupe tout mouvement si l'utilisateur le demande. */
+@media (prefers-reduced-motion: reduce) {
+	#naya-teaser, #naya-launcher.naya-wiggle, .naya-launcher-pulse { animation: none !important; }
+	#naya-teaser { transition: none; }
+}
+
 /* --------------------------------------------------------------------------
    Fenêtre flottante
    -------------------------------------------------------------------------- */
@@ -460,6 +571,7 @@
 		border-radius: 0;
 	}
 	#naya-launcher { right: 16px; bottom: 16px; }
+	#naya-teaser { right: 16px; bottom: 90px; }
 }
 
 @media (max-width: 768px) {

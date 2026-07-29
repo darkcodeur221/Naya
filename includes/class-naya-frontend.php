@@ -19,6 +19,8 @@ class Naya_Frontend {
 		return wp_parse_args( get_option( 'naya_settings', array() ), array(
 			'bot_name' => 'Naya', 'welcome_message' => '', 'primary_color' => '#6d28d9',
 			'secondary_color' => '#db2777', 'widget_enabled' => 1, 'suggestions' => '',
+			'teaser_enabled' => 1, 'teaser_delay' => 8,
+			'teaser_message' => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
 		) );
 	}
 
@@ -46,6 +48,10 @@ class Naya_Frontend {
 			'welcome'  => $s['welcome_message'],
 			'sugg'     => $suggestions,
 			'pageUrl'  => get_permalink( (int) get_option( 'naya_chat_page_id' ) ),
+			'teaser'   => array(
+				'enabled' => (int) $s['teaser_enabled'],
+				'delay'   => max( 1, (int) $s['teaser_delay'] ) * 1000,
+			),
 			'i18n'     => array(
 				'placeholder' => __( 'Écrivez votre message…', 'naya' ),
 				'error'       => __( 'Oups, une erreur est survenue. Réessayez.', 'naya' ),
@@ -79,11 +85,23 @@ class Naya_Frontend {
 		}
 		?>
 		<div id="naya-widget" data-naya-mode="widget">
+			<?php if ( ! empty( $s['teaser_enabled'] ) && ! empty( $s['teaser_message'] ) ) : ?>
+				<div id="naya-teaser" class="naya-hidden" role="button" tabindex="0">
+					<button class="naya-teaser-close" aria-label="<?php esc_attr_e( 'Masquer', 'naya' ); ?>">✕</button>
+					<div class="naya-teaser-avatar">✦</div>
+					<div class="naya-teaser-body">
+						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
+						<p><?php echo esc_html( $s['teaser_message'] ); ?></p>
+					</div>
+				</div>
+			<?php endif; ?>
+
 			<button id="naya-launcher" aria-label="<?php esc_attr_e( 'Ouvrir le chat', 'naya' ); ?>">
 				<span class="naya-launcher-icon">
 					<svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 3C7 3 3 6.6 3 11c0 2.2 1 4.2 2.7 5.6-.1 1-.5 2.1-1.4 3.1-.2.2 0 .6.3.5 1.7-.2 3.1-.8 4.1-1.5 1 .3 2.1.4 3.3.4 5 0 9-3.6 9-8S17 3 12 3z" fill="currentColor"/><circle cx="8.5" cy="11" r="1.2" fill="#fff"/><circle cx="12" cy="11" r="1.2" fill="#fff"/><circle cx="15.5" cy="11" r="1.2" fill="#fff"/></svg>
 				</span>
 				<span class="naya-launcher-pulse"></span>
+				<span class="naya-badge" aria-hidden="true">1</span>
 			</button>
 
 			<div id="naya-window" class="naya-hidden" role="dialog" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">

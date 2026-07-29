@@ -75,6 +75,9 @@ class Naya_Admin {
 		$out['primary_color']   = isset( $input['primary_color'] ) ? sanitize_hex_color( $input['primary_color'] ) : '#6d28d9';
 		$out['secondary_color'] = isset( $input['secondary_color'] ) ? sanitize_hex_color( $input['secondary_color'] ) : '#db2777';
 		$out['widget_enabled']  = empty( $input['widget_enabled'] ) ? 0 : 1;
+		$out['teaser_enabled']  = empty( $input['teaser_enabled'] ) ? 0 : 1;
+		$out['teaser_message']  = isset( $input['teaser_message'] ) ? sanitize_text_field( $input['teaser_message'] ) : '';
+		$out['teaser_delay']    = isset( $input['teaser_delay'] ) ? max( 1, min( 120, (int) $input['teaser_delay'] ) ) : 8;
 		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
 
 		$out['notify_enabled'] = empty( $input['notify_enabled'] ) ? 0 : 1;
@@ -102,6 +105,8 @@ class Naya_Admin {
 			'widget_enabled' => 1, 'suggestions' => '',
 			'notify_enabled' => 1, 'notify_email' => get_option( 'admin_email' ),
 			'knowledge' => '', 'whatsapp' => '221778002341',
+			'teaser_enabled' => 1, 'teaser_delay' => 8,
+			'teaser_message' => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -220,6 +225,27 @@ class Naya_Admin {
 								<?php esc_html_e( 'Afficher la bulle de chat sur tout le site', 'naya' ); ?>
 							</label>
 						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Incitation à la conversation', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[teaser_enabled]" value="1" <?php checked( $s['teaser_enabled'], 1 ); ?> />
+								<?php esc_html_e( 'Afficher une bulle d\'accroche animée pour inviter les visiteurs à écrire', 'naya' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'La bulle apparaît au premier signal d\'intérêt (temps passé, défilement ou intention de sortie), accompagnée d\'un badge et d\'un frétillement du bouton. Une seule fois par visite.', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_teaser_message"><?php esc_html_e( 'Message d\'accroche', 'naya' ); ?></label></th>
+						<td>
+							<input type="text" id="naya_teaser_message" name="naya_settings[teaser_message]" value="<?php echo esc_attr( $s['teaser_message'] ); ?>" class="large-text" maxlength="120" />
+							<p class="description"><?php esc_html_e( 'Court et engageant. Exemple : « Besoin d\'un devis ? Je vous réponds en 2 minutes 👋 »', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_teaser_delay"><?php esc_html_e( 'Délai d\'apparition (secondes)', 'naya' ); ?></label></th>
+						<td><input type="number" id="naya_teaser_delay" name="naya_settings[teaser_delay]" value="<?php echo esc_attr( $s['teaser_delay'] ); ?>" min="1" max="120" class="small-text" /></td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="naya_color1"><?php esc_html_e( 'Couleur principale', 'naya' ); ?></label></th>

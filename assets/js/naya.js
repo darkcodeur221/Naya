@@ -441,6 +441,123 @@
 		}).catch(function () { /* silencieux */ });
 	};
 
+	/* ------------------- Incitation à la conversation ------------------ */
+
+	/**
+	 * Incitation à la conversation : bulle d'accroche, badge et frétillement
+	 * de la bulle. Se déclenche au premier signal d'intérêt (temps passé,
+	 * défilement, intention de sortie) et ne s'impose jamais deux fois.
+	 */
+	function Nudge(widget, openChat) {
+		this.widget = widget;
+		this.openChat = openChat;
+		this.launcher = document.getElementById('naya-launcher');
+		this.teaser = document.getElementById('naya-teaser');
+		this.done = !!sessionStorage.getItem('naya_nudge_done');
+		this.shown = false;
+
+		var cfg = NAYA.teaser || {};
+		if (!cfg.enabled || this.done) return;
+
+		this.arm(cfg.delay || 8000);
+		this.startWiggle();
+	}
+
+	Nudge.prototype.arm = function (delay) {
+		var self = this;
+		var fire = function () { self.show(); };
+
+		// 1. Temps passé sur la page.
+		this.timer = setTimeout(fire, delay);
+
+		// 2. Défilement au-delà de 45 % : le visiteur explore vraiment.
+		this.onScroll = function () {
+			var h = document.documentElement.scrollHeight - window.innerHeight;
+			if (h > 0 && window.scrollY / h > 0.45) fire();
+		};
+		window.addEventListener('scroll', this.onScroll, { passive: true });
+
+		// 3. Intention de sortie : la souris quitte la page par le haut.
+		this.onLeave = function (e) {
+			if (e.clientY <= 0) fire();
+		};
+		document.addEventListener('mouseout', this.onLeave);
+	};
+
+	Nudge.prototype.disarm = function () {
+		clearTimeout(this.timer);
+		window.removeEventListener('scroll', this.onScroll);
+		document.removeEventListener('mouseout', this.onLeave);
+	};
+
+	Nudge.prototype.show = function () {
+		if (this.shown || this.done) return;
+		if (this.widget.classList.contains('naya-open')) return;
+		this.shown = true;
+		this.disarm();
+
+		var self = this;
+		this.widget.classList.add('naya-nudged');
+
+		if (this.teaser) {
+			this.teaser.classList.remove('naya-hidden');
+
+			var open = function () {
+				self.dismiss(true);
+				self.openChat();
+				API.track('teaser_click');
+			};
+			this.teaser.addEventListener('click', open);
+			this.teaser.addEventListener('keydown', function (e) {
+				if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+			});
+			this.teaser.querySelector('.naya-teaser-close').addEventListener('click', function (e) {
+				e.stopPropagation();
+				self.dismiss(true);
+			});
+
+			// L'accroche se retire d'elle-même après 20 s, sans insister.
+			this.autoHide = setTimeout(function () { self.dismiss(false); }, 20000);
+		}
+
+		API.track('teaser_shown');
+	};
+
+	/**
+	 * @param {boolean} definitive Vrai si le visiteur a agi (clic ou fermeture) :
+	 *                             on ne le relance plus de la session.
+	 */
+	Nudge.prototype.dismiss = function (definitive) {
+		clearTimeout(this.autoHide);
+		if (this.teaser && !this.teaser.classList.contains('naya-hidden')) {
+			var t = this.teaser;
+			t.classList.add('naya-teaser-out');
+			setTimeout(function () {
+				t.classList.add('naya-hidden');
+				t.classList.remove('naya-teaser-out');
+			}, 280);
+		}
+		if (definitive) {
+			this.done = true;
+			this.stopWiggle();
+			this.widget.classList.remove('naya-nudged');
+			sessionStorage.setItem('naya_nudge_done', '1');
+		}
+	};
+
+	Nudge.prototype.startWiggle = function () {
+		var self = this;
+		this.wiggleTimer = setInterval(function () {
+			if (self.done || self.widget.classList.contains('naya-open')) return;
+			self.launcher.classList.add('naya-wiggle');
+			setTimeout(function () { self.launcher.classList.remove('naya-wiggle'); }, 900);
+		}, 14000);
+	};
+
+	Nudge.prototype.stopWiggle = function () {
+		clearInterval(this.wiggleTimer);
+	};
+
 	/* ------------------------- Initialisation ------------------------- */
 
 	document.addEventListener('DOMContentLoaded', function () {
@@ -450,7 +567,7 @@
 			var launcher = document.getElementById('naya-launcher');
 			var win = document.getElementById('naya-window');
 
-			launcher.addEventListener('click', function () {
+			var openChat = function () {
 				widget.classList.add('naya-open');
 				win.classList.remove('naya-hidden');
 				chat.input.focus();
@@ -459,6 +576,13 @@
 					sessionStorage.setItem('naya_opened', '1');
 					API.track('widget_open');
 				}
+			};
+
+			var nudge = new Nudge(widget, openChat);
+
+			launcher.addEventListener('click', function () {
+				nudge.dismiss(true);
+				openChat();
 			});
 			win.querySelector('.naya-close').addEventListener('click', function () {
 				widget.classList.remove('naya-open');

@@ -98,6 +98,9 @@ class Naya_Activator {
 			'notify_email'    => get_option( 'admin_email' ),
 			'knowledge'       => '',
 			'whatsapp'        => '221778002341',
+			'teaser_enabled'  => 1,
+			'teaser_delay'    => 8,
+			'teaser_message'  => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
 		) );
 	}
 }
