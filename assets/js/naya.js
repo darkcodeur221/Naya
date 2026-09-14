@@ -109,6 +109,9 @@
 		this.form = root.querySelector('.naya-input-bar');
 		this.input = this.form.querySelector('textarea');
 		this.sendBtn = this.form.querySelector('button[type="submit"]');
+		this.endBtn = root.querySelector('.naya-end-btn');
+		this.grabber = root.querySelector('.naya-grabber');
+		this.sheet = root.querySelector('#naya-window') || root.querySelector('#naya-panel');
 		this.conversationId = parseInt(sessionStorage.getItem('naya_conv') || '0', 10) || 0;
 		this.busy = false;
 
@@ -160,6 +163,120 @@
 				self.showRating(false);
 			});
 		}
+
+		// Clôture explicite de la conversation.
+		if (this.endBtn) {
+			this.endBtn.addEventListener('click', function () { self.endConversation(); });
+		}
+
+		this.bindSwipe();
+	};
+
+	/* ------------------- Clôture de la conversation -------------------- */
+
+	/**
+	 * « Terminer » : on remercie, on propose de noter, puis on repart à neuf.
+	 * C'est le meilleur moment pour recueillir un avis — le visiteur vient
+	 * de décider lui-même que l'échange était fini.
+	 */
+	Chat.prototype.endConversation = function () {
+		var self = this;
+		if (!this.conversationId) { this.requestClose(); return; }
+
+		var dejaNote = !!sessionStorage.getItem('naya_rated_' + this.conversationId);
+
+		if (dejaNote) {
+			this.farewell();
+			return;
+		}
+
+		// On affiche la notation, précédée d'un mot de contexte.
+		this.suggEl.innerHTML = '';
+		this.showRating(false, {
+			title: NAYA.i18n.endTitle,
+			onDone: function () { self.farewell(); },
+			onSkip: function () { self.farewell(); }
+		});
+		this.toggleEndButton(false);
+	};
+
+	/** Message d'au revoir, puis fermeture et remise à zéro. */
+	Chat.prototype.farewell = function () {
+		var self = this;
+		this.suggEl.innerHTML = '';
+		this.append('assistant', NAYA.i18n.endDone);
+		setTimeout(function () {
+			self.resetConversation();
+			self.requestClose();
+		}, 1400);
+	};
+
+	Chat.prototype.resetConversation = function () {
+		this.conversationId = 0;
+		sessionStorage.removeItem('naya_conv');
+		this.ratingInvited = false;
+		clearTimeout(this.ratingTimer);
+		this.showWelcome();
+	};
+
+	/** Demande la fermeture au conteneur (fenêtre, panneau…). */
+	Chat.prototype.requestClose = function () {
+		if (typeof this.onClose === 'function') this.onClose();
+	};
+
+	/* ------------------ Glissement vers le bas (mobile) ---------------- */
+
+	/**
+	 * Sur mobile, tirer la poignée vers le bas ferme la conversation — le
+	 * geste attendu pour ce type de panneau.
+	 */
+	Chat.prototype.bindSwipe = function () {
+		if (!this.grabber || !this.sheet) return;
+
+		var self = this;
+		var startY = 0;
+		var delta = 0;
+		var dragging = false;
+
+		var onStart = function (e) {
+			if (window.innerWidth > 600) return;
+			dragging = true;
+			delta = 0;
+			startY = (e.touches ? e.touches[0].clientY : e.clientY);
+			self.sheet.classList.add('naya-dragging');
+		};
+
+		var onMove = function (e) {
+			if (!dragging) return;
+			var y = (e.touches ? e.touches[0].clientY : e.clientY);
+			delta = Math.max(0, y - startY);
+			self.sheet.style.transform = 'translateY(' + delta + 'px)';
+			if (e.cancelable) e.preventDefault();
+		};
+
+		var onEnd = function () {
+			if (!dragging) return;
+			dragging = false;
+			self.sheet.classList.remove('naya-dragging');
+			self.sheet.style.transform = '';
+
+			// Au-delà d'un quart de la hauteur, le geste vaut fermeture.
+			if (delta > Math.min(160, self.sheet.offsetHeight * 0.25)) {
+				self.requestClose();
+			}
+		};
+
+		this.grabber.addEventListener('touchstart', onStart, { passive: true });
+		this.grabber.addEventListener('touchmove', onMove, { passive: false });
+		this.grabber.addEventListener('touchend', onEnd);
+		this.grabber.addEventListener('mousedown', onStart);
+		document.addEventListener('mousemove', onMove);
+		document.addEventListener('mouseup', onEnd);
+
+		// Un simple appui sur la poignée ferme aussi.
+		this.grabber.addEventListener('click', function () {
+			if (delta < 6) self.requestClose();
+		});
 	};
 
 	/* ---------------------- Notation de l'agent ----------------------- */
@@ -173,8 +290,9 @@
 		}, 60000);
 	};
 
-	Chat.prototype.showRating = function (auto) {
+	Chat.prototype.showRating = function (auto, options) {
 		var self = this;
+		options = options || {};
 		if (!this.conversationId) return;
 		if (sessionStorage.getItem('naya_rated_' + this.conversationId)) return;
 		if (this.messagesEl.querySelector('.naya-rating')) return;
@@ -186,7 +304,7 @@
 
 		var title = document.createElement('div');
 		title.className = 'naya-rating-title';
-		title.textContent = NAYA.i18n.rateTitle;
+		title.textContent = options.title || NAYA.i18n.rateTitle;
 		card.appendChild(title);
 
 		var starsRow = document.createElement('div');
@@ -235,7 +353,11 @@
 					thanks.className = 'naya-rating-title';
 					thanks.textContent = NAYA.i18n.rateThanks;
 					card.appendChild(thanks);
-					setTimeout(function () { card.remove(); }, 4000);
+					if (options.onDone) {
+						setTimeout(function () { card.remove(); options.onDone(); }, 900);
+					} else {
+						setTimeout(function () { card.remove(); }, 4000);
+					}
 				})
 				.catch(function () {
 					send.disabled = false;
@@ -243,6 +365,19 @@
 		});
 		form.appendChild(send);
 		card.appendChild(form);
+
+		// À la clôture, on laisse toujours une porte de sortie sans noter.
+		if (options.onSkip) {
+			var skip = document.createElement('button');
+			skip.type = 'button';
+			skip.className = 'naya-rating-skip';
+			skip.textContent = NAYA.i18n.endSkip;
+			skip.addEventListener('click', function () {
+				card.remove();
+				options.onSkip();
+			});
+			card.appendChild(skip);
+		}
 
 		this.messagesEl.appendChild(card);
 		this.scroll();
@@ -253,7 +388,21 @@
 		if (NAYA.welcome) {
 			this.append('assistant', NAYA.welcome);
 		}
+		// Une ligne d'invitation lève l'hésitation du « par où commencer ».
+		if ((NAYA.sugg || []).length && NAYA.i18n.startHint) {
+			var hint = document.createElement('div');
+			hint.className = 'naya-start-hint';
+			hint.textContent = NAYA.i18n.startHint;
+			this.messagesEl.appendChild(hint);
+		}
 		this.renderSuggestions();
+		this.toggleEndButton(false);
+	};
+
+	/** Le bouton « Terminer » n'a de sens qu'une fois l'échange engagé. */
+	Chat.prototype.toggleEndButton = function (show) {
+		if (!this.endBtn) return;
+		this.endBtn.classList.toggle('naya-hidden', !show);
 	};
 
 	Chat.prototype.renderSuggestions = function () {
@@ -340,6 +489,7 @@
 				sessionStorage.setItem('naya_conv', String(data.conversation_id));
 				self.append('assistant', data.reply);
 				self.armRatingInvite();
+				self.toggleEndButton(true);
 				if (self.onReply) self.onReply();
 				if (self.mode === 'page') self.refreshList();
 			})
@@ -369,6 +519,7 @@
 						self.append(m.role, m.content);
 					}
 				});
+				self.toggleEndButton(messages.length > 0);
 				if (self.mode === 'page') self.refreshList();
 			})
 			.catch(function () {
@@ -725,6 +876,7 @@
 			var barChat = new Chat(widget, 'widget');
 			var bar = new Bar(widget, barChat);
 			barChat.onReply = function () { bar.notifyReply(); };
+			barChat.onClose = function () { bar.closePanel(); };
 
 			var pageEl = document.getElementById('naya-page');
 			if (pageEl) new Chat(pageEl, 'page');
@@ -753,10 +905,13 @@
 				nudge.dismiss(true);
 				openChat();
 			});
-			win.querySelector('.naya-close').addEventListener('click', function () {
+			var closeWindow = function () {
 				widget.classList.remove('naya-open');
 				win.classList.add('naya-hidden');
-			});
+			};
+
+			win.querySelector('.naya-close').addEventListener('click', closeWindow);
+			chat.onClose = closeWindow;
 		}
 
 		var page = document.getElementById('naya-page');

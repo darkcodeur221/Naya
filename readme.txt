@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.0.1
+Stable tag: 2.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,13 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.1.0 =
+* Bouton rouge « Terminer » bien visible : clôture la conversation, propose l'avis au bon moment, puis repart à neuf
+* Confort mobile : panneau plein écran qui suit la hauteur réellement visible (clavier compris), poignée de glissement pour fermer d'un geste, zones tactiles agrandies, champ à 16 px (plus de zoom automatique iOS), zone de saisie au-dessus de la barre système
+* En-tête mobile épuré : l'étoile et le plein écran disparaissent au profit de « Terminer » et « Réduire »
+* Suggestions animées en cascade et défilement horizontal sur mobile, pour démarrer d'un seul geste
+* Ligne d'invitation sous le message d'accueil : « Choisissez une question ou écrivez la vôtre »
 
 = 2.0.1 =
 * Mises à jour automatiques depuis GitHub : le plugin apparaît dans « Extensions → Mises à jour » comme un plugin du répertoire officiel, plus besoin d'installer un ZIP à la main

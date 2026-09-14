@@ -702,6 +702,103 @@
 }
 .naya-rating-form button:hover { transform: translateY(-1px); }
 .naya-rating-form button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.naya-rating-skip {
+	margin-top: 9px;
+	border: none;
+	background: none;
+	color: var(--naya-muted);
+	font-size: 12px;
+	font-family: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+	padding: 4px 8px;
+}
+.naya-rating-skip:hover { color: var(--naya-text); }
+
+/* --------------------------------------------------------------------------
+   Bouton « Terminer »
+   Rouge et distinct de la réduction : le visiteur déclare avoir fini, ce qui
+   ouvre naturellement la demande d'avis. Il n'apparaît qu'une fois la
+   conversation engagée — proposer de terminer un échange vide n'aurait
+   aucun sens.
+   -------------------------------------------------------------------------- */
+.naya-end-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	border: none;
+	border-radius: 10px;
+	background: linear-gradient(180deg, #ef4444, #dc2626);
+	color: #fff;
+	font-size: 12.5px;
+	font-weight: 700;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+	animation: naya-end-in 0.42s cubic-bezier(0.34, 1.5, 0.5, 1) both,
+	           naya-end-pulse 2.8s ease-in-out 1.2s infinite;
+	transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+}
+.naya-end-btn.naya-hidden { display: none; }
+.naya-end-btn:hover {
+	transform: translateY(-1px);
+	filter: brightness(1.07);
+	box-shadow: 0 8px 22px rgba(220, 38, 38, 0.48);
+}
+.naya-end-btn:active { transform: scale(0.96); }
+
+@keyframes naya-end-in {
+	from { opacity: 0; transform: scale(0.6); }
+	to { opacity: 1; transform: scale(1); }
+}
+/* Respiration discrète : attire l'œil sans clignoter. */
+@keyframes naya-end-pulse {
+	0%, 100% { box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35); }
+	50% { box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35), 0 0 0 7px rgba(239, 68, 68, 0.12); }
+}
+
+/* --------------------------------------------------------------------------
+   Poignée de glissement (mobile) : signale que le panneau se ferme
+   d'un geste vers le bas.
+   -------------------------------------------------------------------------- */
+.naya-grabber {
+	display: none;
+	width: 100%;
+	padding: 10px 0 4px;
+	border: none;
+	background: transparent;
+	cursor: grab;
+	flex-shrink: 0;
+	touch-action: none;
+}
+.naya-grabber::before {
+	content: '';
+	display: block;
+	width: 42px;
+	height: 4px;
+	margin: 0 auto;
+	border-radius: 999px;
+	background: rgba(20, 10, 50, 0.18);
+	transition: background 0.2s, width 0.2s;
+}
+.naya-grabber:active { cursor: grabbing; }
+.naya-grabber:active::before { background: rgba(20, 10, 50, 0.32); width: 54px; }
+
+/* Invitation au démarrage, sous le message d'accueil */
+.naya-start-hint {
+	align-self: center;
+	font-size: 12px;
+	color: var(--naya-muted);
+	padding: 2px 0 4px;
+	animation: naya-fade-up 0.5s 0.35s ease both;
+}
+@keyframes naya-fade-up {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: translateY(0); }
+}
 
 /* Indicateur de frappe */
 .naya-typing {
@@ -746,9 +843,27 @@
 	padding: 7px 13px;
 	border-radius: 999px;
 	cursor: pointer;
-	transition: all 0.2s;
+	transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+	/* Arrivée en cascade : le regard suit, et l'envie de cliquer vient. */
+	animation: naya-sugg-in 0.42s cubic-bezier(0.34, 1.4, 0.5, 1) both;
 }
-.naya-sugg:hover { background: var(--naya-c1); color: #fff; transform: translateY(-1px); }
+.naya-sugg:nth-child(1) { animation-delay: 0.18s; }
+.naya-sugg:nth-child(2) { animation-delay: 0.28s; }
+.naya-sugg:nth-child(3) { animation-delay: 0.38s; }
+.naya-sugg:nth-child(4) { animation-delay: 0.48s; }
+.naya-sugg:nth-child(n+5) { animation-delay: 0.56s; }
+.naya-sugg:hover {
+	background: var(--naya-c1);
+	color: #fff;
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px color-mix(in srgb, var(--naya-c1) 35%, transparent);
+}
+.naya-sugg:active { transform: scale(0.96); }
+
+@keyframes naya-sugg-in {
+	from { opacity: 0; transform: translateY(10px) scale(0.92); }
+	to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* --------------------------------------------------------------------------
    Zone de saisie
@@ -941,8 +1056,24 @@
 	font-size: 12px !important;
 }
 
-#naya-widget .naya-header button,
-#naya-page .naya-header button,
+/* Le bouton « Terminer » porte un libellé : il garde sa largeur naturelle. */
+#naya-widget .naya-end-btn,
+#naya-page .naya-end-btn {
+	position: static !important;
+	width: auto !important;
+	min-width: 0 !important;
+	height: 32px !important;
+	padding: 0 12px !important;
+	border: none !important;
+	border-radius: 10px !important;
+	background: linear-gradient(180deg, #ef4444, #dc2626) !important;
+	color: #fff !important;
+	font-size: 12.5px !important;
+	flex-shrink: 0 !important;
+}
+
+#naya-widget .naya-header button:not(.naya-end-btn),
+#naya-page .naya-header button:not(.naya-end-btn),
 #naya-widget .naya-header .naya-expand,
 #naya-page .naya-header .naya-expand {
 	position: static !important;
@@ -1015,7 +1146,7 @@
 	max-width: none !important;
 	margin: 0 !important;
 }
-#naya-widget .naya-panel-tools button,
+#naya-widget .naya-panel-tools button:not(.naya-end-btn),
 #naya-widget .naya-panel-tools .naya-expand {
 	position: static !important;
 	width: 30px !important;
@@ -1047,17 +1178,105 @@
 	#naya-panel {
 		top: 52px;
 		width: 100vw;
-		height: calc(100vh - 52px);
-		border-radius: 0;
+		height: calc(100dvh - 52px);
+		border-radius: 18px 18px 0 0;
+	}
+	@supports not (height: 100dvh) {
+		#naya-panel { height: calc(100vh - 52px); }
 	}
 }
-@media (max-width: 480px) {
+/* --------------------------------------------------------------------------
+   Confort mobile
+   Feuille de route : plein écran qui suit réellement la hauteur visible
+   (clavier compris), poignée de glissement, zones tactiles d'au moins 44 px
+   et champ à 16 px pour éviter le zoom automatique d'iOS.
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+	.naya-grabber { display: block; }
+
+	/* 100dvh suit la hauteur réellement visible : la barre d'adresse des
+	   navigateurs mobiles ne rogne plus le champ de saisie. */
 	#naya-window {
-		right: 0; bottom: 0;
-		width: 100vw; height: 100vh;
-		max-width: 100vw; max-height: 100vh;
+		right: 0; left: 0; bottom: 0;
+		width: 100%; height: 100dvh;
+		max-width: 100%; max-height: 100dvh;
 		border-radius: 0;
+		animation: naya-sheet-in 0.34s cubic-bezier(0.32, 1.2, 0.5, 1);
 	}
+	@supports not (height: 100dvh) {
+		#naya-window { height: 100vh; max-height: 100vh; }
+	}
+
+	@keyframes naya-sheet-in {
+		from { opacity: 0.6; transform: translateY(100%); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	/* Glissement vers le bas : le panneau suit le doigt. */
+	#naya-window.naya-dragging,
+	#naya-panel.naya-dragging { animation: none; transition: none; }
+	#naya-window.naya-sheet-out,
+	#naya-panel.naya-sheet-out {
+		animation: naya-sheet-out 0.24s ease-in forwards;
+	}
+	@keyframes naya-sheet-out {
+		to { opacity: 0.5; transform: translateY(100%); }
+	}
+
+	/* En-tête épuré : sur un petit écran, « Terminer » et « Réduire » suffisent.
+	   L'étoile fait doublon (la notation est proposée à la clôture) et le
+	   plein écran n'a aucun sens quand on y est déjà. */
+	.naya-header .naya-rate-btn,
+	.naya-header .naya-expand,
+	.naya-panel-tools .naya-rate-btn,
+	.naya-panel-tools .naya-expand {
+		display: none !important;
+	}
+
+	/* Cibles tactiles confortables */
+	.naya-header .naya-close,
+	.naya-panel-tools button:not(.naya-end-btn) {
+		width: 40px !important;
+		height: 40px !important;
+	}
+	.naya-header { gap: 10px; }
+	#naya-widget .naya-end-btn,
+	#naya-page .naya-end-btn {
+		height: 38px !important;
+		padding: 0 14px !important;
+		font-size: 13px !important;
+		margin-left: auto !important;
+	}
+
+	/* La zone de saisie reste au-dessus de la barre système. */
+	.naya-input-bar {
+		padding-bottom: calc(12px + env(safe-area-inset-bottom));
+	}
+	.naya-input-bar textarea {
+		font-size: 16px; /* en-dessous, iOS zoome automatiquement */
+		padding: 12px 14px;
+	}
+	.naya-input-bar button[type="submit"] {
+		width: 46px !important;
+		height: 46px !important;
+	}
+
+	/* Suggestions : défilement horizontal plutôt qu'un pavé qui pousse le fil. */
+	.naya-suggestions {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scrollbar-width: none;
+		padding-bottom: 10px;
+		-webkit-overflow-scrolling: touch;
+	}
+	.naya-suggestions::-webkit-scrollbar { display: none; }
+	.naya-sugg { flex-shrink: 0; font-size: 13.5px; padding: 9px 15px; }
+
+	.naya-msg { max-width: 88%; font-size: 15px; }
+	.naya-footer-brand { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 480px) {
 	#naya-launcher { right: 16px; bottom: 16px; }
 	#naya-teaser { right: 16px; bottom: 90px; }
 }

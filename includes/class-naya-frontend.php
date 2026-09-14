@@ -68,6 +68,11 @@ class Naya_Frontend {
 				'ratePlaceholder' => __( 'Un commentaire ? (facultatif)', 'naya' ),
 				'rateSend'    => __( 'Envoyer mon avis', 'naya' ),
 				'rateThanks'  => __( 'Merci pour votre avis ! 💜', 'naya' ),
+				'endConfirm'  => __( 'Terminer cette conversation ?', 'naya' ),
+				'endTitle'    => __( 'Avant de partir…', 'naya' ),
+				'endSkip'     => __( 'Fermer sans noter', 'naya' ),
+				'endDone'     => __( 'À très vite ! 👋', 'naya' ),
+				'startHint'   => __( 'Choisissez une question ou écrivez la vôtre', 'naya' ),
 			),
 		) );
 
@@ -126,15 +131,17 @@ class Naya_Frontend {
 			</button>
 
 			<div id="naya-window" class="naya-hidden" role="dialog" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
+				<button type="button" class="naya-grabber" aria-label="<?php esc_attr_e( 'Fermer en glissant vers le bas', 'naya' ); ?>"></button>
 				<div class="naya-header">
 					<div class="naya-avatar">✦</div>
 					<div class="naya-header-meta">
 						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
 						<span class="naya-status"><span class="naya-dot"></span><?php esc_html_e( 'En ligne', 'naya' ); ?></span>
 					</div>
+					<?php self::end_button(); ?>
 					<button class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
 					<a class="naya-expand" href="<?php echo esc_url( get_permalink( (int) get_option( 'naya_chat_page_id' ) ) ); ?>" title="<?php esc_attr_e( 'Ouvrir en plein écran', 'naya' ); ?>">⛶</a>
-					<button class="naya-close" aria-label="<?php esc_attr_e( 'Fermer', 'naya' ); ?>">✕</button>
+					<button class="naya-close" aria-label="<?php esc_attr_e( 'Réduire', 'naya' ); ?>">✕</button>
 				</div>
 				<div class="naya-messages" aria-live="polite"></div>
 				<div class="naya-suggestions"></div>
@@ -148,6 +155,23 @@ class Naya_Frontend {
 				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
 			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Bouton de clôture de conversation. Volontairement rouge et distinct de
+	 * la simple réduction : ici le visiteur dit « j'ai terminé », ce qui est
+	 * le meilleur moment pour lui demander son avis.
+	 */
+	private static function end_button() {
+		?>
+		<button type="button" class="naya-end-btn naya-hidden"
+			aria-label="<?php esc_attr_e( 'Terminer la conversation', 'naya' ); ?>">
+			<svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+				<path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+			</svg>
+			<span class="naya-end-label"><?php esc_html_e( 'Terminer', 'naya' ); ?></span>
+		</button>
 		<?php
 	}
 
@@ -193,9 +217,11 @@ class Naya_Frontend {
 			</div>
 
 			<div id="naya-panel" class="naya-hidden" role="dialog" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
+				<button type="button" class="naya-grabber" aria-label="<?php esc_attr_e( 'Fermer en glissant vers le bas', 'naya' ); ?>"></button>
 				<div class="naya-panel-head">
 					<span class="naya-panel-title"><?php echo esc_html( $s['bot_name'] ); ?></span>
 					<div class="naya-panel-tools">
+						<?php self::end_button(); ?>
 						<button type="button" class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
 						<?php if ( $page_url ) : ?>
 							<a class="naya-expand" href="<?php echo esc_url( $page_url ); ?>" title="<?php esc_attr_e( 'Ouvrir en plein écran', 'naya' ); ?>">⛶</a>
@@ -242,6 +268,7 @@ class Naya_Frontend {
 						<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
 						<span class="naya-status"><span class="naya-dot"></span><?php esc_html_e( 'En ligne', 'naya' ); ?></span>
 					</div>
+					<?php self::end_button(); ?>
 					<button class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
 				</div>
 				<div class="naya-messages" aria-live="polite"></div>
