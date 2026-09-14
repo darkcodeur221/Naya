@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.6.1
+Stable tag: 2.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,13 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.0.0 =
+* Nouvelle présentation par défaut : barre de conversation en haut de page, avec champ de saisie visible en permanence, panneau qui se déploie, réduction en onglet et compteur de réponses non lues
+* La bulle flottante reste disponible en option
+* Playbook commercial : méthode de vente consultative (accueillir, comprendre, apporter de la valeur, qualifier, engager), traitement des objections, capture des coordonnées, degré d'initiative réglable
+* Alertes e-mail repensées : deux niveaux de priorité (à rappeler / piste), coordonnées du prospect, e-mail HTML avec transcription, plusieurs destinataires possibles, relance si la situation s'aggrave
+* Priorité et coordonnées affichées dans le tableau de bord et l'export CSV
 
 = 1.6.1 =
 * Correctif : la croix de fermeture de la bulle d'accroche se retrouvait dans le flux (gros carré) sur les thèmes qui stylent les boutons en `!important`

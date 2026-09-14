@@ -21,6 +21,9 @@ class Naya_Frontend {
 			'secondary_color' => '#db2777', 'widget_enabled' => 1, 'suggestions' => '',
 			'teaser_enabled' => 1, 'teaser_delay' => 8,
 			'teaser_message' => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
+			'widget_position' => 'bar', 'bar_offset' => 1,
+			'bar_tagline' => __( 'Conseillère en ligne', 'naya' ),
+			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
 		) );
 	}
 
@@ -52,6 +55,7 @@ class Naya_Frontend {
 				'enabled' => (int) $s['teaser_enabled'],
 				'delay'   => max( 1, (int) $s['teaser_delay'] ) * 1000,
 			),
+			'position' => $s['widget_position'],
 			'i18n'     => array(
 				'placeholder' => __( 'Écrivez votre message…', 'naya' ),
 				'error'       => __( 'Oups, une erreur est survenue. Réessayez.', 'naya' ),
@@ -72,15 +76,32 @@ class Naya_Frontend {
 			esc_html( $s['primary_color'] ),
 			esc_html( $s['secondary_color'] )
 		);
+
+		// La barre occupe le haut de l'écran : on décale le site comme le fait
+		// la barre d'administration de WordPress, pour ne rien recouvrir.
+		if ( 'bar' === $s['widget_position'] && ! empty( $s['bar_offset'] ) && ! self::is_chat_page() ) {
+			$css .= 'html{margin-top:58px !important;}'
+				. '@media screen and (max-width:782px){html{margin-top:52px !important;}}'
+				. 'html.naya-bar-minimized{margin-top:0 !important;}';
+		}
+
 		wp_add_inline_style( 'naya', $css );
 	}
 
 	/**
-	 * Bulle + fenêtre flottante, injectées dans le footer de toutes les pages.
+	 * Widget global. Deux présentations possibles :
+	 *  - « bar »    : barre d'appel à la conversation en haut de page (défaut),
+	 *                 avec un champ de saisie visible et un panneau qui se déploie ;
+	 *  - « bubble » : bulle flottante classique en bas à droite.
 	 */
 	public static function render_widget() {
 		$s = self::settings();
 		if ( ! $s['widget_enabled'] || self::is_chat_page() ) {
+			return;
+		}
+
+		if ( 'bar' === $s['widget_position'] ) {
+			self::render_bar( $s );
 			return;
 		}
 		?>
@@ -126,6 +147,77 @@ class Naya_Frontend {
 				</form>
 				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Barre de conversation en haut de page : le champ de saisie est visible
+	 * en permanence — c'est ce qui déclenche le plus d'échanges — et le
+	 * panneau de conversation se déploie juste en dessous.
+	 */
+	private static function render_bar( $s ) {
+		$page_url = get_permalink( (int) get_option( 'naya_chat_page_id' ) );
+		?>
+		<div id="naya-widget" class="naya-mode-bar" data-naya-mode="widget">
+
+			<div id="naya-bar" role="region" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
+				<div class="naya-bar-inner">
+					<div class="naya-bar-identity">
+						<span class="naya-bar-avatar" aria-hidden="true">✦</span>
+						<span class="naya-bar-labels">
+							<strong><?php echo esc_html( $s['bot_name'] ); ?></strong>
+							<span class="naya-bar-status"><span class="naya-dot"></span><?php echo esc_html( $s['bar_tagline'] ); ?></span>
+						</span>
+					</div>
+
+					<form class="naya-bar-form">
+						<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+						<input type="text" class="naya-bar-input" autocomplete="off"
+							placeholder="<?php echo esc_attr( $s['bar_placeholder'] ); ?>"
+							aria-label="<?php esc_attr_e( 'Votre message', 'naya' ); ?>" />
+						<button type="submit" class="naya-bar-send" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
+							<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
+							<span class="naya-bar-send-label"><?php esc_html_e( 'Discuter', 'naya' ); ?></span>
+						</button>
+					</form>
+
+					<div class="naya-bar-actions">
+						<button type="button" class="naya-bar-toggle" aria-expanded="false" aria-controls="naya-panel"
+							aria-label="<?php esc_attr_e( 'Ouvrir la conversation', 'naya' ); ?>">
+							<span class="naya-chevron" aria-hidden="true"></span>
+						</button>
+						<button type="button" class="naya-bar-minimize" aria-label="<?php esc_attr_e( 'Réduire la barre', 'naya' ); ?>">✕</button>
+					</div>
+				</div>
+			</div>
+
+			<div id="naya-panel" class="naya-hidden" role="dialog" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
+				<div class="naya-panel-head">
+					<span class="naya-panel-title"><?php echo esc_html( $s['bot_name'] ); ?></span>
+					<div class="naya-panel-tools">
+						<button type="button" class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>
+						<?php if ( $page_url ) : ?>
+							<a class="naya-expand" href="<?php echo esc_url( $page_url ); ?>" title="<?php esc_attr_e( 'Ouvrir en plein écran', 'naya' ); ?>">⛶</a>
+						<?php endif; ?>
+						<button type="button" class="naya-panel-close" aria-label="<?php esc_attr_e( 'Fermer la conversation', 'naya' ); ?>">✕</button>
+					</div>
+				</div>
+				<div class="naya-messages" aria-live="polite"></div>
+				<div class="naya-suggestions"></div>
+				<form class="naya-input-bar">
+					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
+					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
+					</button>
+				</form>
+				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
+			</div>
+
+			<button type="button" id="naya-tab" class="naya-hidden" aria-label="<?php esc_attr_e( 'Rouvrir la barre de conversation', 'naya' ); ?>">
+				<span aria-hidden="true">💬</span> <?php echo esc_html( $s['bot_name'] ); ?>
+			</button>
 		</div>
 		<?php
 	}

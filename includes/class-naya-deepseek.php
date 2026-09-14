@@ -93,6 +93,7 @@ class Naya_DeepSeek {
 			. $site_context
 			. Naya_Knowledge::context()
 			. $custom
+			. Naya_Playbook::instructions( $settings )
 			. self::style_rules( $settings )
 			. Naya_Security::prompt_guard()
 			. Naya_Notify::prompt_instructions();

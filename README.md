@@ -2,11 +2,12 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-1.6.1-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.0.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
-- **Widget flottant élégant** en bas à droite : bulle animée avec effet de pulsation, fenêtre avec dégradé personnalisable, indicateur de frappe, suggestions rapides cliquables.
+- **Barre de conversation en haut de page** (présentation par défaut) : champ de saisie visible en permanence — ce qui déclenche le plus d'échanges — panneau qui se déploie sous la barre, réduction en onglet discret, compteur de réponses non lues. La page est décalée comme avec la barre d'administration WordPress, donc rien n'est recouvert. La bulle flottante en bas à droite reste disponible en option.
+- **Conseillère commerciale, pas simple FAQ** : Naya applique une méthode de vente consultative — accueillir, comprendre le besoin, apporter de la valeur, qualifier en douceur, puis proposer l'étape suivante et demander les coordonnées. Elle traite les objections (prix, doute, mécontentement) et son degré d'initiative se règle en trois niveaux.
 - **Page de chat dédiée** (style Alibaba) créée automatiquement à l'activation : plein écran, barre latérale avec l'historique des conversations, création/suppression de conversations.
 - **Mémoire de contexte** : chaque conversation est stockée en base de données (`wp_naya_conversations` / `wp_naya_messages`). Les 30 derniers messages sont renvoyés à DeepSeek à chaque tour — Naya se souvient de ce qui a été dit.
 - **Visiteurs anonymes ou connectés** : identification par cookie sécurisé (1 an) ou par compte WordPress.
@@ -16,7 +17,7 @@ Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond �
 - **Tableau de bord statistiques** (menu « Naya » dans l'admin, sur 30 jours) : conversations, messages, visiteurs uniques, engagement (messages/conversation), **leads détectés et taux de conversion**, ouvertures du widget, clics WhatsApp — plus un graphique d'activité par jour, les heures de pointe, le top des questions posées, la liste des derniers leads avec la raison détectée par l'IA, et un **export CSV**.
 - **Nourrie du contenu du site** : Naya lit automatiquement vos pages, articles et produits WooCommerce (titres, liens, résumés, prix) et ne répond qu'à partir de ces connaissances — réponses courtes, précises, avec de **vrais liens cliquables**, jamais d'URL inventée. Un champ « Connaissances complémentaires » permet d'ajouter tarifs, offres et FAQ.
 - **Redirection WhatsApp** : quand un visiteur montre une intention sérieuse (achat, devis, projet), Naya lui propose de poursuivre sur WhatsApp (numéro configurable, lien wa.me).
-- **Alertes e-mail intelligentes** : l'IA détecte les conversations à forte valeur (prospect, demande de devis ou de contact, réclamation) et vous envoie automatiquement la transcription par e-mail — un seul e-mail par conversation, plafond journalier anti-inondation.
+- **Alertes e-mail à deux niveaux** : Naya distingue 🔥 « à rappeler » (devis ferme, échéance proche, budget annoncé, rendez-vous, client mécontent, coordonnées laissées) et 💡 « piste » (intérêt réel sans urgence). L'e-mail HTML contient les **coordonnées collectées**, la situation et la transcription complète, et part vers un ou plusieurs destinataires. Une alerte par conversation, renouvelée uniquement si la situation s'aggrave ou si des coordonnées arrivent.
 - **Bouclier anti-bots** : champ honeypot invisible, filtrage des user-agents automatisés (curl, python, headless…), contrôle d'origine (Origin/Referer), intervalle minimum entre messages, plafond horaire par IP avec bannissement temporaire d'une heure.
 - **Résistant aux thèmes** : le widget reprend la main sur les styles que les thèmes WordPress imposent aux boutons (positions, tailles minimales, majuscules, ombres), pour que la mise en page reste intacte quel que soit le thème installé.
 - **Sécurité** : nonces REST, requêtes préparées, vérification de propriété des conversations, limite de débit (20 messages / 5 min / visiteur), garde-fou anti-injection de prompt (l'IA refuse de changer de rôle ou de révéler ses instructions), clé API jamais exposée côté client.
@@ -48,6 +49,7 @@ includes/
   class-naya-notify.php               → alertes e-mail sur conversations intéressantes
   class-naya-knowledge.php            → index du contenu du site (pages, articles, produits)
   class-naya-stats.php                → tableau de bord statistiques + export CSV
+  class-naya-playbook.php             → méthode commerciale injectée dans le prompt
   class-naya-rest.php                 → endpoints REST /naya/v1/*
   class-naya-admin.php                → page de réglages
   class-naya-frontend.php             → widget + page dédiée

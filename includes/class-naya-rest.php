@@ -150,13 +150,13 @@ class Naya_Rest {
 			);
 		}
 
-		// L'IA a-t-elle signalé une conversation intéressante ? (balise retirée avant affichage)
-		list( $reply, $notify_reason ) = Naya_Notify::extract( $reply );
+		// L'IA a-t-elle signalé une situation à traiter ? (balise retirée avant affichage)
+		list( $reply, $alert ) = Naya_Notify::extract( $reply );
 
 		Naya_Conversations::add_message( $conversation_id, 'assistant', $reply );
 
-		if ( null !== $notify_reason ) {
-			Naya_Notify::maybe_send( $conversation_id, $notify_reason );
+		if ( null !== $alert ) {
+			Naya_Notify::maybe_send( $conversation_id, $alert );
 		}
 
 		return rest_ensure_response( array(

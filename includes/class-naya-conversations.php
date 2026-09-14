@@ -172,15 +172,32 @@ class Naya_Conversations {
 		) );
 	}
 
-	public static function mark_notified( $conversation_id, $reason = '' ) {
+	public static function mark_notified( $conversation_id, $reason = '', $priority = 'normal', $contact = '' ) {
 		global $wpdb;
 		$wpdb->update(
 			$wpdb->prefix . 'naya_conversations',
 			array(
-				'notified_at'   => current_time( 'mysql' ),
-				'notify_reason' => mb_substr( (string) $reason, 0, 255 ),
+				'notified_at'     => current_time( 'mysql' ),
+				'notify_reason'   => mb_substr( (string) $reason, 0, 255 ),
+				'notify_priority' => ( 'urgent' === $priority ? 'urgent' : 'normal' ),
+				'lead_contact'    => mb_substr( (string) $contact, 0, 190 ),
 			),
 			array( 'id' => $conversation_id )
+		);
+	}
+
+	/** État de notification : a-t-on déjà alerté, à quelle priorité, avec quel contact ? */
+	public static function notification_state( $conversation_id ) {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare(
+			"SELECT notified_at, notify_priority, lead_contact
+			 FROM {$wpdb->prefix}naya_conversations WHERE id = %d",
+			$conversation_id
+		) );
+		return array(
+			'notified' => ( $row && $row->notified_at ),
+			'priority' => $row && $row->notify_priority ? $row->notify_priority : '',
+			'contact'  => $row && $row->lead_contact ? $row->lead_contact : '',
 		);
 	}
 

@@ -138,7 +138,7 @@ class Naya_Stats {
 	public static function latest_leads() {
 		global $wpdb;
 		return $wpdb->get_results(
-			"SELECT id, title, notify_reason, notified_at
+			"SELECT id, title, notify_reason, notify_priority, lead_contact, notified_at
 			 FROM {$wpdb->prefix}naya_conversations
 			 WHERE notified_at IS NOT NULL
 			 ORDER BY notified_at DESC LIMIT 10"
@@ -167,7 +167,8 @@ class Naya_Stats {
 
 		global $wpdb;
 		$rows = $wpdb->get_results(
-			"SELECT c.id, c.title, c.created_at, c.updated_at, c.notified_at, c.notify_reason, c.rating, c.feedback,
+			"SELECT c.id, c.title, c.created_at, c.updated_at, c.notified_at, c.notify_reason,
+				c.notify_priority, c.lead_contact, c.rating, c.feedback,
 				(SELECT COUNT(*) FROM {$wpdb->prefix}naya_messages m WHERE m.conversation_id = c.id AND m.role = 'user') AS visitor_messages
 			 FROM {$wpdb->prefix}naya_conversations c ORDER BY c.created_at DESC",
 			ARRAY_A
@@ -179,7 +180,7 @@ class Naya_Stats {
 
 		$out = fopen( 'php://output', 'w' );
 		fputs( $out, "\xEF\xBB\xBF" ); // BOM UTF-8 pour Excel.
-		fputcsv( $out, array( 'ID', 'Sujet', 'Créée le', 'Dernier échange', 'Messages visiteur', 'Lead', 'Raison du lead', 'Note', 'Commentaire' ), ';' );
+		fputcsv( $out, array( 'ID', 'Sujet', 'Créée le', 'Dernier échange', 'Messages visiteur', 'Lead', 'Priorité', 'Coordonnées', 'Raison du lead', 'Note', 'Commentaire' ), ';' );
 		foreach ( $rows as $r ) {
 			fputcsv( $out, array(
 				$r['id'],
@@ -188,6 +189,8 @@ class Naya_Stats {
 				$r['updated_at'],
 				$r['visitor_messages'],
 				$r['notified_at'] ? 'Oui' : 'Non',
+				'urgent' === $r['notify_priority'] ? 'À rappeler' : ( $r['notified_at'] ? 'Piste' : '' ),
+				$r['lead_contact'],
 				$r['notify_reason'],
 				$r['rating'],
 				$r['feedback'],
@@ -249,6 +252,8 @@ class Naya_Stats {
 				.naya-list li:last-child { border-bottom: none; }
 				.naya-list .meta { color: #999; font-size: 11.5px; display: block; margin-top: 2px; }
 				.naya-lead-reason { color: #6d28d9; font-weight: 600; }
+				.naya-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 6px; }
+				.naya-pill-hot { background: #fee2e2; color: #b91c1c; }
 				.naya-empty { color: #999; font-style: italic; font-size: 13px; }
 				@media (max-width: 1100px) { .naya-panels { grid-template-columns: 1fr; } }
 			</style>
@@ -301,11 +306,21 @@ class Naya_Stats {
 						<ul class="naya-list">
 							<?php foreach ( $leads as $lead ) : ?>
 								<li>
-									<strong><?php echo esc_html( $lead->title ? $lead->title : sprintf( __( 'Conversation n°%d', 'naya' ), $lead->id ) ); ?></strong>
+									<?php if ( 'urgent' === $lead->notify_priority ) : ?>
+										<span class="naya-pill naya-pill-hot">🔥 <?php esc_html_e( 'À rappeler', 'naya' ); ?></span>
+									<?php endif; ?>
+									<strong><?php echo esc_html( $lead->lead_contact ? $lead->lead_contact : ( $lead->title ? $lead->title : sprintf( __( 'Conversation n°%d', 'naya' ), $lead->id ) ) ); ?></strong>
 									<?php if ( $lead->notify_reason ) : ?>
 										— <span class="naya-lead-reason"><?php echo esc_html( $lead->notify_reason ); ?></span>
 									<?php endif; ?>
-									<span class="meta"><?php echo esc_html( date_i18n( 'j F Y à H:i', strtotime( $lead->notified_at ) ) ); ?></span>
+									<span class="meta">
+										<?php if ( $lead->lead_contact && $lead->title ) : ?>
+											<?php echo esc_html( $lead->title ); ?> ·
+										<?php elseif ( ! $lead->lead_contact ) : ?>
+											<?php esc_html_e( 'coordonnées non communiquées', 'naya' ); ?> ·
+										<?php endif; ?>
+										<?php echo esc_html( date_i18n( 'j F Y à H:i', strtotime( $lead->notified_at ) ) ); ?>
+									</span>
 								</li>
 							<?php endforeach; ?>
 						</ul>

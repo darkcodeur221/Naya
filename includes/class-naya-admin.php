@@ -75,17 +75,35 @@ class Naya_Admin {
 		$out['primary_color']   = isset( $input['primary_color'] ) ? sanitize_hex_color( $input['primary_color'] ) : '#6d28d9';
 		$out['secondary_color'] = isset( $input['secondary_color'] ) ? sanitize_hex_color( $input['secondary_color'] ) : '#db2777';
 		$out['widget_enabled']  = empty( $input['widget_enabled'] ) ? 0 : 1;
+		$out['widget_position'] = ( isset( $input['widget_position'] ) && 'bubble' === $input['widget_position'] ) ? 'bubble' : 'bar';
+		$out['bar_offset']      = empty( $input['bar_offset'] ) ? 0 : 1;
+		$out['bar_tagline']     = isset( $input['bar_tagline'] ) ? sanitize_text_field( $input['bar_tagline'] ) : '';
+		$out['bar_placeholder'] = isset( $input['bar_placeholder'] ) ? sanitize_text_field( $input['bar_placeholder'] ) : '';
 		$out['teaser_enabled']  = empty( $input['teaser_enabled'] ) ? 0 : 1;
 		$out['teaser_message']  = isset( $input['teaser_message'] ) ? sanitize_text_field( $input['teaser_message'] ) : '';
 		$out['teaser_delay']    = isset( $input['teaser_delay'] ) ? max( 1, min( 120, (int) $input['teaser_delay'] ) ) : 8;
 		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
 
 		$out['notify_enabled'] = empty( $input['notify_enabled'] ) ? 0 : 1;
-		$notify_email          = isset( $input['notify_email'] ) ? sanitize_email( $input['notify_email'] ) : '';
-		$out['notify_email']   = is_email( $notify_email ) ? $notify_email : get_option( 'admin_email' );
+
+		// Une ou plusieurs adresses, séparées par des virgules.
+		$emails = array();
+		if ( ! empty( $input['notify_email'] ) ) {
+			foreach ( preg_split( '/[,;]+/', $input['notify_email'] ) as $candidate ) {
+				$candidate = sanitize_email( trim( $candidate ) );
+				if ( is_email( $candidate ) ) {
+					$emails[] = $candidate;
+				}
+			}
+		}
+		$out['notify_email'] = $emails ? implode( ', ', array_unique( $emails ) ) : get_option( 'admin_email' );
 
 		$out['knowledge'] = isset( $input['knowledge'] ) ? sanitize_textarea_field( $input['knowledge'] ) : '';
 		$out['whatsapp']  = isset( $input['whatsapp'] ) ? preg_replace( '/\D/', '', $input['whatsapp'] ) : '';
+
+		$styles = array_keys( Naya_Playbook::styles() );
+		$out['sales_style'] = ( isset( $input['sales_style'] ) && in_array( $input['sales_style'], $styles, true ) )
+			? $input['sales_style'] : 'balanced';
 
 		// Le contenu injecté dans le prompt a changé : on reconstruit l'index.
 		Naya_Knowledge::flush();
@@ -107,6 +125,10 @@ class Naya_Admin {
 			'knowledge' => '', 'whatsapp' => '221778002341',
 			'teaser_enabled' => 1, 'teaser_delay' => 8,
 			'teaser_message' => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
+			'widget_position' => 'bar', 'bar_offset' => 1,
+			'bar_tagline' => __( 'Conseillère en ligne', 'naya' ),
+			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
+			'sales_style' => 'balanced',
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -197,21 +219,44 @@ class Naya_Admin {
 					</tr>
 				</table>
 
-				<h2><?php esc_html_e( 'Notifications e-mail', 'naya' ); ?></h2>
+				<h2><?php esc_html_e( 'Posture commerciale', 'naya' ); ?></h2>
+				<p class="description" style="max-width:640px;">
+					<?php esc_html_e( 'Naya applique une méthode de vente consultative : elle accueille, comprend le besoin, apporte de la valeur, qualifie en douceur, puis propose l\'étape suivante et demande les coordonnées. Choisissez son degré d\'initiative.', 'naya' ); ?>
+				</p>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Conversations intéressantes', 'naya' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Degré d\'initiative', 'naya' ); ?></th>
+						<td>
+							<?php foreach ( Naya_Playbook::styles() as $key => $label ) : ?>
+								<label style="display:block;margin-bottom:6px;">
+									<input type="radio" name="naya_settings[sales_style]" value="<?php echo esc_attr( $key ); ?>" <?php checked( $s['sales_style'], $key ); ?> />
+									<?php echo esc_html( $label ); ?>
+								</label>
+							<?php endforeach; ?>
+						</td>
+					</tr>
+				</table>
+
+				<h2><?php esc_html_e( 'Alertes e-mail', 'naya' ); ?></h2>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Prévenir par e-mail', 'naya' ); ?></th>
 						<td>
 							<label>
 								<input type="checkbox" name="naya_settings[notify_enabled]" value="1" <?php checked( $s['notify_enabled'], 1 ); ?> />
-								<?php esc_html_e( 'M\'envoyer un e-mail quand l\'IA détecte un prospect, une demande de devis/contact ou une réclamation', 'naya' ); ?>
+								<?php esc_html_e( 'Recevoir une alerte quand Naya repère un contact à rappeler', 'naya' ); ?>
 							</label>
-							<p class="description"><?php esc_html_e( 'Un seul e-mail par conversation, 10 maximum par jour. La transcription complète est jointe.', 'naya' ); ?></p>
+							<p class="description">
+								<?php esc_html_e( 'Naya distingue deux niveaux : 🔥 « à rappeler » (devis ferme, échéance proche, budget annoncé, rendez-vous, client mécontent, coordonnées laissées) et 💡 « piste » (intérêt réel sans urgence). L\'e-mail contient les coordonnées collectées, la situation et la transcription. Une alerte par conversation — renouvelée seulement si la situation s\'aggrave ou si des coordonnées arrivent.', 'naya' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="naya_notify_email"><?php esc_html_e( 'Adresse de réception', 'naya' ); ?></label></th>
-						<td><input type="email" id="naya_notify_email" name="naya_settings[notify_email]" value="<?php echo esc_attr( $s['notify_email'] ); ?>" class="regular-text" /></td>
+						<th scope="row"><label for="naya_notify_email"><?php esc_html_e( 'Destinataires', 'naya' ); ?></label></th>
+						<td>
+							<input type="text" id="naya_notify_email" name="naya_settings[notify_email]" value="<?php echo esc_attr( $s['notify_email'] ); ?>" class="large-text" />
+							<p class="description"><?php esc_html_e( 'Plusieurs adresses possibles, séparées par des virgules.', 'naya' ); ?></p>
+						</td>
 					</tr>
 				</table>
 
@@ -224,6 +269,41 @@ class Naya_Admin {
 								<input type="checkbox" name="naya_settings[widget_enabled]" value="1" <?php checked( $s['widget_enabled'], 1 ); ?> />
 								<?php esc_html_e( 'Afficher la bulle de chat sur tout le site', 'naya' ); ?>
 							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Emplacement', 'naya' ); ?></th>
+						<td>
+							<label style="display:block;margin-bottom:6px;">
+								<input type="radio" name="naya_settings[widget_position]" value="bar" <?php checked( $s['widget_position'], 'bar' ); ?> />
+								<strong><?php esc_html_e( 'Barre en haut de page', 'naya' ); ?></strong> —
+								<?php esc_html_e( 'champ de saisie visible en permanence, panneau qui se déploie (recommandé : bien plus de conversations)', 'naya' ); ?>
+							</label>
+							<label style="display:block;">
+								<input type="radio" name="naya_settings[widget_position]" value="bubble" <?php checked( $s['widget_position'], 'bubble' ); ?> />
+								<?php esc_html_e( 'Bulle flottante en bas à droite', 'naya' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr class="naya-bar-option">
+						<th scope="row"><?php esc_html_e( 'Décaler le contenu du site', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[bar_offset]" value="1" <?php checked( $s['bar_offset'], 1 ); ?> />
+								<?php esc_html_e( 'Pousser la page vers le bas pour que la barre ne recouvre rien', 'naya' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'À décocher seulement si votre thème gère mal le décalage (même principe que la barre d\'administration WordPress).', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr class="naya-bar-option">
+						<th scope="row"><label for="naya_bar_tagline"><?php esc_html_e( 'Sous-titre de la barre', 'naya' ); ?></label></th>
+						<td><input type="text" id="naya_bar_tagline" name="naya_settings[bar_tagline]" value="<?php echo esc_attr( $s['bar_tagline'] ); ?>" class="regular-text" maxlength="60" /></td>
+					</tr>
+					<tr class="naya-bar-option">
+						<th scope="row"><label for="naya_bar_placeholder"><?php esc_html_e( 'Invitation dans le champ', 'naya' ); ?></label></th>
+						<td>
+							<input type="text" id="naya_bar_placeholder" name="naya_settings[bar_placeholder]" value="<?php echo esc_attr( $s['bar_placeholder'] ); ?>" class="large-text" maxlength="90" />
+							<p class="description"><?php esc_html_e( 'Exemple : « Besoin d\'un devis ? Posez votre question ici… »', 'naya' ); ?></p>
 						</td>
 					</tr>
 					<tr>

@@ -305,14 +305,27 @@
 	};
 
 	Chat.prototype.send = function () {
-		var self = this;
 		var text = this.input.value.trim();
+		if (!text) return;
+		this.input.value = '';
+		this.input.style.height = 'auto';
+		this.sendText(text);
+	};
+
+	/**
+	 * Envoi effectif. Séparé de send() pour que la barre du haut puisse
+	 * expédier son propre champ de saisie.
+	 *
+	 * @param {string} text     Message du visiteur.
+	 * @param {string} honeypot Valeur du champ piège, si l'appelant en a un.
+	 */
+	Chat.prototype.sendText = function (text, honeypot) {
+		var self = this;
+		text = (text || '').trim();
 		if (!text || this.busy) return;
 
 		this.busy = true;
 		this.sendBtn.disabled = true;
-		this.input.value = '';
-		this.input.style.height = 'auto';
 		this.suggEl.innerHTML = '';
 
 		this.append('user', text);
@@ -320,13 +333,14 @@
 
 		var hp = this.form.querySelector('.naya-hp');
 
-		API.chat(text, this.conversationId, hp ? hp.value : '')
+		API.chat(text, this.conversationId, honeypot || (hp ? hp.value : ''))
 			.then(function (data) {
 				self.typing(false);
 				self.conversationId = data.conversation_id;
 				sessionStorage.setItem('naya_conv', String(data.conversation_id));
 				self.append('assistant', data.reply);
 				self.armRatingInvite();
+				if (self.onReply) self.onReply();
 				if (self.mode === 'page') self.refreshList();
 			})
 			.catch(function (err) {
@@ -439,6 +453,149 @@
 				self.listEl.appendChild(item);
 			});
 		}).catch(function () { /* silencieux */ });
+	};
+
+	/* --------------------- Barre du haut (mode « bar ») ----------------- */
+
+	/**
+	 * Pilote la barre de conversation : champ de saisie toujours visible,
+	 * panneau qui se déploie, et réduction en onglet.
+	 */
+	function Bar(widget, chat) {
+		this.widget = widget;
+		this.chat = chat;
+		this.panel = document.getElementById('naya-panel');
+		this.tab = document.getElementById('naya-tab');
+		this.toggle = widget.querySelector('.naya-bar-toggle');
+		this.form = widget.querySelector('.naya-bar-form');
+		this.input = widget.querySelector('.naya-bar-input');
+		this.open = false;
+		this.unread = 0;
+
+		this.bind();
+
+		// Une barre réduite le reste le temps de la navigation.
+		if (sessionStorage.getItem('naya_bar_minimized')) {
+			this.minimize(true);
+		}
+	}
+
+	Bar.prototype.bind = function () {
+		var self = this;
+
+		// Envoi depuis la barre : on ouvre le panneau et on transmet le message.
+		this.form.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var text = self.input.value.trim();
+			if (!text) { self.openPanel(); return; }
+			var hp = self.form.querySelector('.naya-hp');
+			self.input.value = '';
+			self.openPanel();
+			self.chat.sendText(text, hp ? hp.value : '');
+		});
+
+		// Entrée envoie, sans dépendre de la soumission implicite du navigateur
+		// (le formulaire contient aussi le champ piège anti-robots).
+		this.input.addEventListener('keydown', function (e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				self.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+			}
+		});
+
+		// Cliquer dans le champ donne déjà envie d'écrire : on déploie.
+		this.input.addEventListener('focus', function () { self.openPanel(); });
+
+		this.toggle.addEventListener('click', function () {
+			self.open ? self.closePanel() : self.openPanel();
+		});
+
+		var minimize = this.widget.querySelector('.naya-bar-minimize');
+		if (minimize) {
+			minimize.addEventListener('click', function () { self.minimize(); });
+		}
+
+		if (this.tab) {
+			this.tab.addEventListener('click', function () { self.restore(); });
+		}
+
+		var close = this.panel.querySelector('.naya-panel-close');
+		if (close) {
+			close.addEventListener('click', function () { self.closePanel(); });
+		}
+
+		// Échap referme le panneau sans fermer la barre.
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && self.open) self.closePanel();
+		});
+
+		// Un clic à l'extérieur referme le panneau, sauf si on écrit dedans.
+		document.addEventListener('click', function (e) {
+			if (!self.open) return;
+			if (self.panel.contains(e.target) || self.widget.querySelector('#naya-bar').contains(e.target)) return;
+			self.closePanel();
+		});
+	};
+
+	Bar.prototype.openPanel = function () {
+		if (this.open) return;
+		this.open = true;
+		this.unread = 0;
+		this.renderCount();
+		this.widget.classList.add('naya-panel-open');
+		this.panel.classList.remove('naya-hidden', 'naya-panel-out');
+		this.toggle.setAttribute('aria-expanded', 'true');
+		this.chat.scroll();
+	};
+
+	Bar.prototype.closePanel = function () {
+		if (!this.open) return;
+		var self = this;
+		this.open = false;
+		this.widget.classList.remove('naya-panel-open');
+		this.toggle.setAttribute('aria-expanded', 'false');
+		this.panel.classList.add('naya-panel-out');
+		setTimeout(function () {
+			self.panel.classList.add('naya-hidden');
+			self.panel.classList.remove('naya-panel-out');
+		}, 220);
+	};
+
+	Bar.prototype.minimize = function (silent) {
+		this.closePanel();
+		this.widget.classList.add('naya-minimized');
+		document.documentElement.classList.add('naya-bar-minimized');
+		if (this.tab) this.tab.classList.remove('naya-hidden');
+		if (!silent) sessionStorage.setItem('naya_bar_minimized', '1');
+	};
+
+	Bar.prototype.restore = function () {
+		this.widget.classList.remove('naya-minimized');
+		document.documentElement.classList.remove('naya-bar-minimized');
+		if (this.tab) this.tab.classList.add('naya-hidden');
+		sessionStorage.removeItem('naya_bar_minimized');
+		this.openPanel();
+	};
+
+	/** Signale une réponse reçue alors que le panneau est fermé. */
+	Bar.prototype.notifyReply = function () {
+		if (this.open) return;
+		this.unread++;
+		this.renderCount();
+	};
+
+	Bar.prototype.renderCount = function () {
+		var badge = this.toggle.querySelector('.naya-bar-count');
+		if (!this.unread) {
+			if (badge) badge.remove();
+			return;
+		}
+		if (!badge) {
+			badge = document.createElement('span');
+			badge.className = 'naya-bar-count';
+			this.toggle.appendChild(badge);
+		}
+		badge.textContent = this.unread > 9 ? '9+' : String(this.unread);
 	};
 
 	/* ------------------- Incitation à la conversation ------------------ */
@@ -562,6 +719,18 @@
 
 	document.addEventListener('DOMContentLoaded', function () {
 		var widget = document.getElementById('naya-widget');
+
+		// Présentation en barre : pas de bulle flottante ni d'accroche.
+		if (widget && widget.classList.contains('naya-mode-bar')) {
+			var barChat = new Chat(widget, 'widget');
+			var bar = new Bar(widget, barChat);
+			barChat.onReply = function () { bar.notifyReply(); };
+
+			var pageEl = document.getElementById('naya-page');
+			if (pageEl) new Chat(pageEl, 'page');
+			return;
+		}
+
 		if (widget) {
 			var chat = new Chat(widget, 'widget');
 			var launcher = document.getElementById('naya-launcher');

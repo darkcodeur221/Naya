@@ -30,6 +30,8 @@ class Naya_Activator {
 			updated_at DATETIME NOT NULL,
 			notified_at DATETIME NULL,
 			notify_reason VARCHAR(255) NULL,
+			notify_priority VARCHAR(10) NULL,
+			lead_contact VARCHAR(190) NULL,
 			rating TINYINT UNSIGNED NULL,
 			feedback TEXT NULL,
 			rated_at DATETIME NULL,
@@ -89,7 +91,7 @@ class Naya_Activator {
 			'max_tokens'      => 1024,
 			'bot_name'        => 'Naya',
 			'welcome_message' => __( 'Bonjour 👋 Je suis Naya, votre assistante. Comment puis-je vous aider aujourd\'hui ?', 'naya' ),
-			'system_prompt'   => "Tu es Naya, une assistante virtuelle chaleureuse et professionnelle intégrée à un site WordPress. Tu conseilles les visiteurs, réponds à leurs questions sur le site, ses produits et ses services, et les orientes vers les bonnes pages. Réponds toujours dans la langue de l'utilisateur, de façon concise et utile. Si tu ne connais pas une information spécifique au site, dis-le honnêtement et propose de contacter l'équipe.",
+			'system_prompt'   => "Tu es Naya, la conseillère de l'entreprise : chaleureuse, professionnelle et efficace. Tu accueilles les visiteurs du site, tu comprends leur besoin, tu les conseilles honnêtement et tu les accompagnes jusqu'à la bonne solution. Réponds toujours dans la langue du visiteur. Tu représentes l'entreprise : ton objectif est qu'un visiteur reparte soit avec sa réponse, soit avec un rendez-vous.",
 			'primary_color'   => '#6d28d9',
 			'secondary_color' => '#db2777',
 			'widget_enabled'  => 1,
@@ -101,6 +103,11 @@ class Naya_Activator {
 			'teaser_enabled'  => 1,
 			'teaser_delay'    => 8,
 			'teaser_message'  => __( 'Une question ? Je vous réponds tout de suite 👋', 'naya' ),
+			'widget_position' => 'bar',
+			'bar_offset'      => 1,
+			'bar_tagline'     => __( 'Conseillère en ligne', 'naya' ),
+			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
+			'sales_style'     => 'balanced',
 		) );
 	}
 }
