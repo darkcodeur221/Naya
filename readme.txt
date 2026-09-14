@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,11 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.0.1 =
+* Mises à jour automatiques depuis GitHub : le plugin apparaît dans « Extensions → Mises à jour » comme un plugin du répertoire officiel, plus besoin d'installer un ZIP à la main
+* Lien « Vérifier les mises à jour » sur la ligne du plugin
+* Aucune bibliothèque tierce embarquée ; fonctionne avec une release ou un simple tag Git
 
 = 2.0.0 =
 * Nouvelle présentation par défaut : barre de conversation en haut de page, avec champ de saisie visible en permanence, panneau qui se déploie, réduction en onglet et compteur de réponses non lues

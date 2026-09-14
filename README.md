@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-2.0.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.0.1-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -21,6 +21,20 @@ Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond �
 - **Bouclier anti-bots** : champ honeypot invisible, filtrage des user-agents automatisés (curl, python, headless…), contrôle d'origine (Origin/Referer), intervalle minimum entre messages, plafond horaire par IP avec bannissement temporaire d'une heure.
 - **Résistant aux thèmes** : le widget reprend la main sur les styles que les thèmes WordPress imposent aux boutons (positions, tailles minimales, majuscules, ombres), pour que la mise en page reste intacte quel que soit le thème installé.
 - **Sécurité** : nonces REST, requêtes préparées, vérification de propriété des conversations, limite de débit (20 messages / 5 min / visiteur), garde-fou anti-injection de prompt (l'IA refuse de changer de rôle ou de révéler ses instructions), clé API jamais exposée côté client.
+
+## 🔄 Mises à jour automatiques
+
+Naya se met à jour **depuis ce dépôt**, comme un plugin du répertoire officiel : la mise à jour apparaît dans *Extensions → Mises à jour* sur chaque site, et s'installe en un clic. Rien à installer côté client, aucune bibliothèque tierce embarquée.
+
+**Publier une nouvelle version** (depuis le dossier du plugin) :
+
+```bash
+git tag v2.0.2 && git push origin v2.0.2
+```
+
+Le numéro du tag doit correspondre à l'en-tête `Version:` de `naya.php`. Les sites voient la mise à jour dans les 6 heures (délai de cache) ; le lien **« Vérifier les mises à jour »**, sous la ligne du plugin dans *Extensions*, force la vérification immédiate.
+
+Pour accompagner une version de notes de publication, créez une *release* GitHub sur le tag : son contenu s'affiche dans la fenêtre « Voir les détails » du plugin.
 
 ## 🚀 Installation
 
