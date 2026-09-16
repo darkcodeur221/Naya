@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-2.1.0-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.1.1-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -66,6 +66,8 @@ includes/
   class-naya-knowledge.php            → index du contenu du site (pages, articles, produits)
   class-naya-stats.php                → tableau de bord statistiques + export CSV
   class-naya-playbook.php             → méthode commerciale injectée dans le prompt
+  class-naya-updater.php              → mises à jour automatiques depuis GitHub
+  class-naya-cache.php                → purge des caches après mise à jour
   class-naya-rest.php                 → endpoints REST /naya/v1/*
   class-naya-admin.php                → page de réglages
   class-naya-frontend.php             → widget + page dédiée

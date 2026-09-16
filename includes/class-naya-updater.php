@@ -230,6 +230,12 @@ class Naya_Updater {
 
 	public static function flush_cache() {
 		delete_transient( self::CACHE_KEY );
+
+		// Après une mise à jour, les fichiers CSS/JS combinés des extensions
+		// de cache doivent être régénérés.
+		if ( class_exists( 'Naya_Cache' ) ) {
+			Naya_Cache::purge_all();
+		}
 	}
 
 	/**

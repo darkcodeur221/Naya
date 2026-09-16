@@ -82,6 +82,20 @@ class Naya_Frontend {
 			esc_html( $s['secondary_color'] )
 		);
 
+		// Filet de sécurité : ce CSS est généré à chaque page par PHP, donc
+		// toujours synchrone avec la version installée. Si une extension de
+		// cache sert un fichier .css périmé, ces quelques règles suffisent à
+		// garder le widget en place et les éléments masqués invisibles —
+		// au lieu de le voir se déverser en bas de page.
+		$css .= '#naya-bar{position:fixed;top:0;left:0;right:0;z-index:99997;}'
+			. '#naya-panel{position:fixed;z-index:99996;}'
+			. '#naya-window{position:fixed;right:24px;bottom:24px;z-index:99999;}'
+			. '#naya-launcher{position:fixed;right:24px;bottom:24px;z-index:99998;}'
+			. '#naya-teaser{position:fixed;z-index:99998;}'
+			. '#naya-tab{position:fixed;top:0;right:24px;z-index:99997;}'
+			. '#naya-window.naya-hidden,#naya-panel.naya-hidden,#naya-teaser.naya-hidden,'
+			. '#naya-tab.naya-hidden,.naya-end-btn.naya-hidden{display:none !important;}';
+
 		// La barre occupe le haut de l'écran : on décale le site comme le fait
 		// la barre d'administration de WordPress, pour ne rien recouvrir.
 		if ( 'bar' === $s['widget_position'] && ! empty( $s['bar_offset'] ) && ! self::is_chat_page() ) {
