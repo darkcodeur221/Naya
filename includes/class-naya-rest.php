@@ -31,6 +31,15 @@ class Naya_Rest {
 			),
 		) );
 
+		// Jeton de sécurité frais. Indispensable avec un cache de page : le
+		// jeton inscrit dans le HTML expire au bout de 24 h, alors que la
+		// page en cache, elle, continue d'être servie des jours durant.
+		register_rest_route( 'naya/v1', '/nonce', array(
+			'methods'             => 'GET',
+			'callback'            => array( __CLASS__, 'fresh_nonce' ),
+			'permission_callback' => '__return_true',
+		) );
+
 		register_rest_route( 'naya/v1', '/event', array(
 			'methods'             => 'POST',
 			'callback'            => array( __CLASS__, 'event' ),
@@ -83,12 +92,30 @@ class Naya_Rest {
 		) );
 	}
 
+	/**
+	 * Renvoie un jeton valide. La réponse ne doit jamais être mise en cache,
+	 * sans quoi le problème qu'elle résout se reproduirait à l'identique.
+	 */
+	public static function fresh_nonce() {
+		nocache_headers();
+		return rest_ensure_response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ) );
+	}
+
 	public static function check_nonce( $request ) {
 		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new WP_Error( 'naya_forbidden', __( 'Session expirée, rechargez la page.', 'naya' ), array( 'status' => 403 ) );
+
+		if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return true;
 		}
-		return true;
+
+		// Le code d'erreur est distinct : le client sait ainsi qu'il doit
+		// demander un jeton frais et rejouer sa requête, plutôt que
+		// d'afficher un échec au visiteur.
+		return new WP_Error(
+			'naya_stale_nonce',
+			__( 'Jeton de sécurité expiré.', 'naya' ),
+			array( 'status' => 403 )
+		);
 	}
 
 	public static function sanitize_message( $value ) {

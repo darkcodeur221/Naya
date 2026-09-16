@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.1.2
+Stable tag: 2.1.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,11 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.1.3 =
+* Correctif majeur : sur un site avec cache de page, le jeton de sécurité inscrit dans le HTML expirait au bout de 24 h et tous les envois de message étaient rejetés. Naya obtient désormais un jeton frais et rejoue la requête automatiquement, sans que le visiteur ne voie d'erreur
+* Le script démarre même si un optimiseur le charge avant ses données de configuration, au lieu d'abandonner définitivement
+* Messages d'erreur plus clairs lorsque le serveur renvoie une réponse illisible
 
 = 2.1.2 =
 * Le CSS et le JavaScript du plugin sont désormais exclus de la combinaison, de la minification et de l'élagage du « CSS inutilisé » pratiqués par LiteSpeed, WP Rocket et Autoptimize — c'était la cause des éléments empilés et du chat sans mise en forme

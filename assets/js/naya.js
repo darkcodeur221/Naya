@@ -5,7 +5,28 @@
 (function () {
 	'use strict';
 
-	if (typeof NAYA === 'undefined') return;
+	// Les optimiseurs de scripts réordonnent parfois les balises : ce fichier
+	// peut alors s'exécuter avant ses propres données de configuration.
+	// Plutôt que d'abandonner, on patiente jusqu'à ce qu'elles arrivent.
+	if (typeof window.NAYA === 'undefined') {
+		var essais = 0;
+		var attente = setInterval(function () {
+			if (typeof window.NAYA !== 'undefined') {
+				clearInterval(attente);
+				demarrer();
+			} else if (++essais > 40) { // ~4 s, puis on renonce
+				clearInterval(attente);
+				if (window.console && console.warn) {
+					console.warn('[Naya] Configuration absente : le script du plugin a été chargé sans ses données. Vérifiez les réglages d\'optimisation JavaScript de votre cache.');
+				}
+			}
+		}, 100);
+		return;
+	}
+
+	demarrer();
+
+	function demarrer() {
 
 	var API = {
 		headers: function () {
@@ -14,62 +35,88 @@
 				'X-WP-Nonce': NAYA.nonce
 			};
 		},
+
+		/**
+		 * Requête protégée par le jeton de sécurité.
+		 *
+		 * Avec un cache de page, le jeton inscrit dans le HTML peut être
+		 * périmé depuis longtemps. On en redemande alors un frais et on
+		 * rejoue la requête une fois — le visiteur ne voit rien.
+		 */
+		request: function (url, options, dejaRejoue) {
+			var self = this;
+			options = options || {};
+			options.headers = this.headers();
+			options.credentials = 'same-origin';
+
+			return fetch(url, options).then(function (res) {
+				if (res.status !== 403 || dejaRejoue) {
+					return handleResponse(res);
+				}
+
+				// Jeton probablement expiré : on en obtient un neuf et on réessaie.
+				return fetch(NAYA.restUrl + '/nonce', { credentials: 'same-origin' })
+					.then(function (r) { return r.json(); })
+					.then(function (data) {
+						if (!data || !data.nonce) return handleResponse(res);
+						NAYA.nonce = data.nonce;
+						return self.request(url, { method: options.method, body: options.body }, true);
+					})
+					.catch(function () { return handleResponse(res); });
+			});
+		},
 		chat: function (message, conversationId, honeypot) {
-			return fetch(NAYA.restUrl + '/chat', {
+			return this.request(NAYA.restUrl + '/chat', {
 				method: 'POST',
-				headers: this.headers(),
-				credentials: 'same-origin',
 				body: JSON.stringify({
 					message: message,
 					conversation_id: conversationId || 0,
 					website: honeypot || ''
 				})
-			}).then(handleJson);
+			});
 		},
 		conversations: function () {
-			return fetch(NAYA.restUrl + '/conversations', {
-				headers: this.headers(),
-				credentials: 'same-origin'
-			}).then(handleJson);
+			return this.request(NAYA.restUrl + '/conversations', {});
 		},
 		history: function (id) {
-			return fetch(NAYA.restUrl + '/conversations/' + id, {
-				headers: this.headers(),
-				credentials: 'same-origin'
-			}).then(handleJson);
+			return this.request(NAYA.restUrl + '/conversations/' + id, {});
 		},
 		remove: function (id) {
-			return fetch(NAYA.restUrl + '/conversations/' + id, {
-				method: 'DELETE',
-				headers: this.headers(),
-				credentials: 'same-origin'
-			}).then(handleJson);
+			return this.request(NAYA.restUrl + '/conversations/' + id, { method: 'DELETE' });
 		},
 		rate: function (id, rating, comment) {
-			return fetch(NAYA.restUrl + '/conversations/' + id + '/rate', {
+			return this.request(NAYA.restUrl + '/conversations/' + id + '/rate', {
 				method: 'POST',
-				headers: this.headers(),
-				credentials: 'same-origin',
 				body: JSON.stringify({ rating: rating, comment: comment || '' })
-			}).then(handleJson);
+			});
 		},
 		track: function (event) {
 			// Statistique d'usage — silencieux en cas d'échec.
-			fetch(NAYA.restUrl + '/event', {
+			this.request(NAYA.restUrl + '/event', {
 				method: 'POST',
-				headers: this.headers(),
-				credentials: 'same-origin',
 				body: JSON.stringify({ event: event })
 			}).catch(function () {});
 		}
 	};
 
-	function handleJson(res) {
+	function handleResponse(res) {
 		return res.json().then(function (data) {
 			if (!res.ok) {
-				throw new Error(data && data.message ? data.message : NAYA.i18n.error);
+				var err = new Error(data && data.message ? data.message : NAYA.i18n.error);
+				err.code = data && data.code ? data.code : '';
+				err.status = res.status;
+				throw err;
 			}
 			return data;
+		}).catch(function (e) {
+			// Réponse illisible (page d'erreur HTML du serveur, pare-feu…) :
+			// mieux vaut un message clair qu'un « undefined ».
+			if (e instanceof SyntaxError) {
+				var err = new Error(NAYA.i18n.error);
+				err.status = res.status;
+				throw err;
+			}
+			throw e;
 		});
 	}
 
@@ -887,7 +934,7 @@
 		}
 	}
 
-	document.addEventListener('DOMContentLoaded', function () {
+	function initialiser() {
 		var widget = document.getElementById('naya-widget');
 		checkStylesheet(widget || document.getElementById('naya-page'));
 
@@ -938,5 +985,18 @@
 		if (page) {
 			new Chat(page, 'page');
 		}
-	});
+	}
+
+	/**
+	 * Si le script arrive après coup — chargement différé, exécution retardée
+	 * par un optimiseur — l'événement de fin de chargement est déjà passé :
+	 * on démarre alors immédiatement.
+	 */
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initialiser);
+	} else {
+		initialiser();
+	}
+
+	} // fin de demarrer()
 })();

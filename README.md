@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-2.1.2-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.1.3-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -86,6 +86,7 @@ assets/
 
 | Méthode | Route | Description |
 |---|---|---|
+| `GET` | `/wp-json/naya/v1/nonce` | Délivre un jeton de sécurité frais (indispensable avec un cache de page) |
 | `POST` | `/wp-json/naya/v1/chat` | Envoie un message, renvoie la réponse de l'IA |
 | `POST` | `/wp-json/naya/v1/event` | Trace un événement d'usage (widget ouvert, clic WhatsApp…) |
 | `POST` | `/wp-json/naya/v1/conversations/{id}/rate` | Note la conversation (1-5 étoiles + commentaire) |
