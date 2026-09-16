@@ -13,6 +13,62 @@ class Naya_Frontend {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_footer', array( __CLASS__, 'render_widget' ) );
 		add_shortcode( 'naya_chat', array( __CLASS__, 'shortcode_page' ) );
+
+		// Les extensions de cache combinent, minifient et parfois élaguent le
+		// CSS jugé « inutilisé ». Le widget étant injecté en pied de page et
+		// ses classes posées en JavaScript, ses règles sont régulièrement
+		// supprimées à tort — le chat se retrouve alors sans mise en forme.
+		// On demande donc explicitement à ce que ces deux fichiers soient
+		// servis tels quels.
+		add_filter( 'style_loader_tag', array( __CLASS__, 'exclude_style_from_optimizers' ), 10, 2 );
+		add_filter( 'script_loader_tag', array( __CLASS__, 'exclude_script_from_optimizers' ), 10, 2 );
+		add_filter( 'litespeed_ucss_whitelist', array( __CLASS__, 'litespeed_whitelist' ) );
+		add_filter( 'litespeed_optm_css_defer_exc', array( __CLASS__, 'litespeed_file_excludes' ) );
+		add_filter( 'litespeed_optm_js_defer_exc', array( __CLASS__, 'litespeed_file_excludes' ) );
+	}
+
+	/**
+	 * Attributs reconnus par LiteSpeed, Autoptimize et WP Rocket pour laisser
+	 * un fichier intact.
+	 */
+	public static function exclude_style_from_optimizers( $tag, $handle ) {
+		if ( 'naya' !== $handle ) {
+			return $tag;
+		}
+		return str_replace(
+			'<link ',
+			'<link data-no-optimize="1" data-noptimize="1" data-minify="0" ',
+			$tag
+		);
+	}
+
+	public static function exclude_script_from_optimizers( $tag, $handle ) {
+		if ( 'naya' !== $handle ) {
+			return $tag;
+		}
+		return str_replace(
+			'<script ',
+			'<script data-no-optimize="1" data-noptimize="1" data-no-defer="1" data-minify="0" ',
+			$tag
+		);
+	}
+
+	/** Sélecteurs que l'élagage de CSS inutilisé ne doit jamais retirer. */
+	public static function litespeed_whitelist( $list ) {
+		$list = is_array( $list ) ? $list : array();
+		return array_merge( $list, array(
+			'#naya-widget', '#naya-bar', '#naya-panel', '#naya-window',
+			'#naya-launcher', '#naya-teaser', '#naya-tab', '#naya-page',
+			'.naya-',
+		) );
+	}
+
+	/** Fichiers du plugin à ne pas différer ni combiner. */
+	public static function litespeed_file_excludes( $list ) {
+		$list = is_array( $list ) ? $list : array();
+		$list[] = 'naya/assets/css/naya.css';
+		$list[] = 'naya/assets/js/naya.js';
+		return $list;
 	}
 
 	private static function settings() {
@@ -82,19 +138,7 @@ class Naya_Frontend {
 			esc_html( $s['secondary_color'] )
 		);
 
-		// Filet de sécurité : ce CSS est généré à chaque page par PHP, donc
-		// toujours synchrone avec la version installée. Si une extension de
-		// cache sert un fichier .css périmé, ces quelques règles suffisent à
-		// garder le widget en place et les éléments masqués invisibles —
-		// au lieu de le voir se déverser en bas de page.
-		$css .= '#naya-bar{position:fixed;top:0;left:0;right:0;z-index:99997;}'
-			. '#naya-panel{position:fixed;z-index:99996;}'
-			. '#naya-window{position:fixed;right:24px;bottom:24px;z-index:99999;}'
-			. '#naya-launcher{position:fixed;right:24px;bottom:24px;z-index:99998;}'
-			. '#naya-teaser{position:fixed;z-index:99998;}'
-			. '#naya-tab{position:fixed;top:0;right:24px;z-index:99997;}'
-			. '#naya-window.naya-hidden,#naya-panel.naya-hidden,#naya-teaser.naya-hidden,'
-			. '#naya-tab.naya-hidden,.naya-end-btn.naya-hidden{display:none !important;}';
+		$css .= self::fallback_css();
 
 		// La barre occupe le haut de l'écran : on décale le site comme le fait
 		// la barre d'administration de WordPress, pour ne rien recouvrir.
@@ -105,6 +149,75 @@ class Naya_Frontend {
 		}
 
 		wp_add_inline_style( 'naya', $css );
+	}
+
+	/**
+	 * Mise en forme de secours, émise en ligne à chaque page par PHP — donc
+	 * toujours synchrone avec la version installée.
+	 *
+	 * Le widget est injecté en fin de document : c'est le CSS qui le remonte
+	 * en haut de l'écran. Si une extension de cache sert un fichier .css
+	 * périmé, sans ces règles l'interface resterait dans le flux et se
+	 * déverserait sous le pied de page, sans mise en forme.
+	 */
+	private static function fallback_css() {
+		return
+			// Sans cette base, les bordures et les marges intérieures
+			// s'ajoutent aux hauteurs et tout se décale.
+			'#naya-widget *,#naya-page *{box-sizing:border-box;}'
+
+			// Positionnement — l'essentiel : sortir les conteneurs du flux.
+			. '#naya-bar{position:fixed;top:0;left:0;right:0;z-index:99997;'
+			. 'background:linear-gradient(135deg,var(--naya-c1),var(--naya-c2));color:#fff;}'
+			. '#naya-panel{position:fixed;z-index:99996;background:#fff;}'
+			. '#naya-window{position:fixed;right:24px;bottom:24px;z-index:99999;background:#fff;}'
+			. '#naya-launcher{position:fixed;right:24px;bottom:24px;z-index:99998;}'
+			. '#naya-teaser{position:fixed;z-index:99998;background:#fff;}'
+			. '#naya-tab{position:fixed;top:0;right:24px;z-index:99997;}'
+
+			// Ce qui doit rester caché le reste, quoi qu'il arrive.
+			. '#naya-window.naya-hidden,#naya-panel.naya-hidden,#naya-teaser.naya-hidden,'
+			. '#naya-tab.naya-hidden,.naya-end-btn.naya-hidden{display:none !important;}'
+
+			// Barre réduite : sans cette règle, la barre et son onglet de
+			// réouverture s'afficheraient tous les deux.
+			. '#naya-widget.naya-minimized #naya-bar{transform:translateY(-100%);}'
+			. '#naya-widget.naya-open #naya-launcher{display:none;}'
+
+			// Le champ piège anti-robots ne doit jamais devenir visible :
+			// un visiteur qui le remplirait serait pris pour un robot.
+			. '#naya-widget .naya-hp,#naya-page .naya-hp{position:absolute !important;'
+			. 'left:-9999px !important;width:1px !important;height:1px !important;opacity:0 !important;}'
+
+			// Disposition complète de la barre : sans elle, les éléments
+			// s'empilent les uns sous les autres et le rendu est inutilisable.
+			. '#naya-bar .naya-bar-inner{display:flex;align-items:center;gap:16px;'
+			. 'max-width:1180px;margin:0 auto;padding:9px 16px;min-height:58px;'
+			. 'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}'
+			. '#naya-bar .naya-bar-identity{display:flex;align-items:center;gap:10px;flex-shrink:0;}'
+			. '#naya-bar .naya-bar-avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;'
+			. 'background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:17px;}'
+			. '#naya-bar .naya-bar-labels{display:flex;flex-direction:column;line-height:1.25;}'
+			. '#naya-bar .naya-bar-labels strong{font-size:15px;}'
+			. '#naya-bar .naya-bar-status{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.9;}'
+			. '#naya-bar .naya-bar-form{display:flex;align-items:center;gap:8px;flex:1;max-width:660px;margin:0;}'
+			. '#naya-bar .naya-bar-input{flex:1;min-width:0;height:40px;padding:0 16px;border-radius:999px;'
+			. 'border:1.5px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;font-size:14.5px;}'
+			. '#naya-bar .naya-bar-input::placeholder{color:rgba(255,255,255,.75);}'
+			. '#naya-bar .naya-bar-send{display:flex;align-items:center;gap:7px;height:40px;padding:0 18px;'
+			. 'border:none;border-radius:999px;background:#fff;color:var(--naya-c1);font-weight:700;'
+			. 'font-size:14px;cursor:pointer;white-space:nowrap;}'
+			. '#naya-bar .naya-bar-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0;}'
+			. '#naya-bar .naya-bar-toggle,#naya-bar .naya-bar-minimize{width:34px;height:34px;padding:0;'
+			. 'border:none;border-radius:10px;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;'
+			. 'display:flex;align-items:center;justify-content:center;}'
+			. '@media(max-width:900px){#naya-bar .naya-bar-labels{display:none;}}'
+			. '@media(max-width:600px){#naya-bar .naya-bar-send span{display:none;}'
+			. '#naya-bar .naya-bar-minimize{display:none;}}'
+
+			// Sentinelle : le JavaScript s'en sert pour vérifier que la
+			// feuille de styles principale a bien été chargée.
+			. '#naya-widget{--naya-fallback:1;}';
 	}
 
 	/**

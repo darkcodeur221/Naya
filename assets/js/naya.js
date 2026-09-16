@@ -868,8 +868,28 @@
 
 	/* ------------------------- Initialisation ------------------------- */
 
+	/**
+	 * Vérifie que la feuille de styles du plugin est bien celle de cette
+	 * version. Un cache qui sert un fichier périmé casse la mise en page —
+	 * autant le dire clairement plutôt que de laisser chercher.
+	 */
+	function checkStylesheet(el) {
+		if (!el) return;
+		var marque = getComputedStyle(el).getPropertyValue('--naya-css');
+		if (marque && marque.trim()) return;
+
+		if (window.console && console.warn) {
+			console.warn(
+				'[Naya] La feuille de styles du plugin n\'est pas chargée ou provient d\'une version antérieure. ' +
+				'Purgez le cache de votre site, y compris les fichiers CSS/JS combinés ' +
+				'(LiteSpeed : Boîte à outils → Purger tout).'
+			);
+		}
+	}
+
 	document.addEventListener('DOMContentLoaded', function () {
 		var widget = document.getElementById('naya-widget');
+		checkStylesheet(widget || document.getElementById('naya-page'));
 
 		// Présentation en barre : pas de bulle flottante ni d'accroche.
 		if (widget && widget.classList.contains('naya-mode-bar')) {

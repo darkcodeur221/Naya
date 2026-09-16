@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-2.1.1-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.1.2-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -23,6 +23,12 @@ Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond �
 - **Bouclier anti-bots** : champ honeypot invisible, filtrage des user-agents automatisés (curl, python, headless…), contrôle d'origine (Origin/Referer), intervalle minimum entre messages, plafond horaire par IP avec bannissement temporaire d'une heure.
 - **Résistant aux thèmes** : le widget reprend la main sur les styles que les thèmes WordPress imposent aux boutons (positions, tailles minimales, majuscules, ombres), pour que la mise en page reste intacte quel que soit le thème installé.
 - **Sécurité** : nonces REST, requêtes préparées, vérification de propriété des conversations, limite de débit (20 messages / 5 min / visiteur), garde-fou anti-injection de prompt (l'IA refuse de changer de rôle ou de révéler ses instructions), clé API jamais exposée côté client.
+
+## ⚡ Compatibilité avec les extensions de cache
+
+Le widget est injecté en pied de page et ses classes sont posées en JavaScript : les optimiseurs de CSS le croient inutilisé et suppriment ses règles, ce qui disloque l'interface. Naya demande donc explicitement que ses deux fichiers soient servis tels quels (`data-no-optimize`, liste blanche UCSS LiteSpeed), purge les caches à chaque changement de version, et embarque une **mise en forme de secours en ligne** qui garde la barre correcte même si la feuille de styles manque.
+
+Si l'affichage paraît cassé après une mise à jour, purgez le cache — **y compris les fichiers CSS/JS combinés** (LiteSpeed : *Boîte à outils → Purger tout*). La console du navigateur affiche un avertissement explicite dans ce cas.
 
 ## 🔄 Mises à jour automatiques
 
