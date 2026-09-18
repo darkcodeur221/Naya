@@ -2,7 +2,7 @@
 
 Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond à leurs demandes et les oriente, avec une mémoire de conversation persistante.
 
-![Version](https://img.shields.io/badge/version-2.1.3-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
+![Version](https://img.shields.io/badge/version-2.1.4-blueviolet) ![WordPress](https://img.shields.io/badge/WordPress-5.8%2B-blue) ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4) ![Licence](https://img.shields.io/badge/licence-GPL--2.0-green)
 
 ## ✨ Fonctionnalités
 
@@ -27,6 +27,8 @@ Chatbot IA propulsé par **Deejitcorp**. Naya conseille vos visiteurs, répond �
 ## ⚡ Compatibilité avec les extensions de cache
 
 Le widget est injecté en pied de page et ses classes sont posées en JavaScript : les optimiseurs de CSS le croient inutilisé et suppriment ses règles, ce qui disloque l'interface. Naya demande donc explicitement que ses deux fichiers soient servis tels quels (`data-no-optimize`, liste blanche UCSS LiteSpeed), purge les caches à chaque changement de version, et embarque une **mise en forme de secours en ligne** qui garde la barre correcte même si la feuille de styles manque.
+
+Côté conversations, aucune réponse du chat n'est jamais mise en cache (en-têtes `no-store`, `litespeed_control_set_nocache`, paramètre unique sur chaque lecture) : chacune est propre à un visiteur. Les visiteurs anonymes n'ont pas besoin de jeton de sécurité — un jeton inscrit dans une page en cache expirerait et bloquerait tout envoi — ; ils sont protégés par une vérification d'origine (`Sec-Fetch-Site`, `Origin`, `Referer`) qui n'a aucun état. Les comptes connectés conservent le jeton.
 
 Si l'affichage paraît cassé après une mise à jour, purgez le cache — **y compris les fichiers CSS/JS combinés** (LiteSpeed : *Boîte à outils → Purger tout*). La console du navigateur affiche un avertissement explicite dans ce cas.
 

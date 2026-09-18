@@ -11,6 +11,7 @@ class Naya_Rest {
 
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		add_filter( 'rest_post_dispatch', array( __CLASS__, 'no_cache' ), 10, 3 );
 	}
 
 	public static function register_routes() {
@@ -101,21 +102,61 @@ class Naya_Rest {
 		return rest_ensure_response( array( 'nonce' => wp_create_nonce( 'wp_rest' ) ) );
 	}
 
+	/**
+	 * Contrôle d'accès des routes du chat.
+	 *
+	 * - Compte connecté : jeton de sécurité exigé. Une requête forgée pourrait
+	 *   agir au nom de la personne, le jeton l'en empêche.
+	 * - Visiteur anonyme : pas de jeton. Inscrit dans une page mise en cache,
+	 *   il expire alors que la page continue d'être servie, et bloque tout
+	 *   envoi — c'est exactement ce qui empêchait les visiteurs de discuter.
+	 *   Pour eux, il ne protégeait d'ailleurs de rien : il est lisible dans le
+	 *   HTML et il n'y a aucun compte à détourner. La protection contre les
+	 *   requêtes forgées passe par la vérification d'origine, qui n'a aucun
+	 *   état et ne peut donc pas être figée par un cache ; la protection
+	 *   contre les abus, par le bouclier Naya_Security.
+	 */
 	public static function check_nonce( $request ) {
-		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! is_user_logged_in() ) {
+			if ( Naya_Security::is_same_origin() ) {
+				return true;
+			}
+			return new WP_Error( 'naya_forbidden', __( 'Requête refusée.', 'naya' ), array( 'status' => 403 ) );
+		}
 
+		$nonce = $request->get_header( 'X-WP-Nonce' );
 		if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 			return true;
 		}
 
-		// Le code d'erreur est distinct : le client sait ainsi qu'il doit
-		// demander un jeton frais et rejouer sa requête, plutôt que
-		// d'afficher un échec au visiteur.
+		// Code distinct : le client comprend qu'il doit demander un jeton
+		// frais et rejouer sa requête, sans afficher d'échec.
 		return new WP_Error(
 			'naya_stale_nonce',
 			__( 'Jeton de sécurité expiré.', 'naya' ),
 			array( 'status' => 403 )
 		);
+	}
+
+	/**
+	 * Aucune réponse du chat ne doit jamais être mise en cache : chacune est
+	 * propre à un visiteur et à un instant.
+	 */
+	public static function no_cache( $response, $server, $request ) {
+		if ( 0 !== strpos( $request->get_route(), '/naya/v1' ) ) {
+			return $response;
+		}
+
+		if ( $response instanceof WP_REST_Response ) {
+			$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private' );
+			$response->header( 'Pragma', 'no-cache' );
+			$response->header( 'X-LiteSpeed-Cache-Control', 'no-cache' );
+		}
+
+		// API officielle de LiteSpeed Cache pour exclure la réponse courante.
+		do_action( 'litespeed_control_set_nocache', 'Naya : réponse de chat' );
+
+		return $response;
 	}
 
 	public static function sanitize_message( $value ) {
@@ -154,11 +195,12 @@ class Naya_Rest {
 
 		$conversation_id = (int) $request->get_param( 'conversation_id' );
 
-		if ( $conversation_id ) {
-			if ( ! Naya_Conversations::owns( $conversation_id ) ) {
-				return new WP_Error( 'naya_forbidden', __( 'Conversation introuvable.', 'naya' ), array( 'status' => 403 ) );
-			}
-		} else {
+		// Un visiteur n'est reconnu que par son cookie de session. S'il l'a
+		// perdu (navigation privée, cookie non conservé, cache mal réglé), la
+		// conversation n'est plus reconnue comme la sienne. Plutôt que de le
+		// bloquer, on ouvre une nouvelle conversation avec son message : il
+		// perd le fil précédent, mais il n'est jamais empêché de parler.
+		if ( ! $conversation_id || ! Naya_Conversations::owns( $conversation_id ) ) {
 			$conversation_id = Naya_Conversations::create();
 		}
 

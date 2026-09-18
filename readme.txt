@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.1.3
+Stable tag: 2.1.4
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,13 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.1.4 =
+* Correctif majeur : Naya fonctionnait pour l'administrateur mais pas pour les visiteurs sur un site avec LiteSpeed Cache. Les visiteurs anonymes n'ont plus besoin de jeton de sécurité ; ils sont protégés par une vérification d'origine sans état, que le cache ne peut pas figer. Les comptes connectés gardent le jeton
+* Sécurité : aucune réponse du chat ne peut plus être mise en cache. Avec l'option « Cache REST API » de LiteSpeed, la liste et l'historique des conversations d'un visiteur pouvaient être resservis à un autre
+* Limites de débit revues pour les réseaux mobiles partagés (CGNAT) : le rythme est limité par visiteur et non plus par adresse IP, qui ne sert plus qu'à bloquer les abus massifs
+* Un visiteur qui a perdu sa session n'est plus bloqué : une nouvelle conversation s'ouvre avec son message
+* La vérification d'origine accepte indifféremment www.exemple.com et exemple.com
 
 = 2.1.3 =
 * Correctif majeur : sur un site avec cache de page, le jeton de sécurité inscrit dans le HTML expirait au bout de 24 h et tous les envois de message étaient rejetés. Naya obtient désormais un jeton frais et rejoue la requête automatiquement, sans que le visiteur ne voie d'erreur

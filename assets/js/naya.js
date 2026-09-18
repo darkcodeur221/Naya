@@ -48,21 +48,39 @@
 			options = options || {};
 			options.headers = this.headers();
 			options.credentials = 'same-origin';
+			options.cache = 'no-store'; // chaque réponse est propre à un visiteur
 
-			return fetch(url, options).then(function (res) {
+			// Les lectures (GET) reçoivent un paramètre unique : un cache serveur
+			// indexé sur l'URL ne peut ainsi jamais resservir à un visiteur la
+			// réponse — et donc les conversations — d'un autre.
+			var method = (options.method || 'GET').toUpperCase();
+			var target = url;
+			if ('GET' === method) {
+				target += (url.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
+			}
+
+			return fetch(target, options).then(function (res) {
 				if (res.status !== 403 || dejaRejoue) {
 					return handleResponse(res);
 				}
 
-				// Jeton probablement expiré : on en obtient un neuf et on réessaie.
-				return fetch(NAYA.restUrl + '/nonce', { credentials: 'same-origin' })
-					.then(function (r) { return r.json(); })
-					.then(function (data) {
-						if (!data || !data.nonce) return handleResponse(res);
-						NAYA.nonce = data.nonce;
-						return self.request(url, { method: options.method, body: options.body }, true);
-					})
-					.catch(function () { return handleResponse(res); });
+				// On ne rejoue que si le serveur signale explicitement un jeton
+				// expiré ; tout autre refus est remonté tel quel.
+				return res.clone().json().catch(function () { return {}; }).then(function (erreur) {
+					if (!erreur || erreur.code !== 'naya_stale_nonce') {
+						return handleResponse(res);
+					}
+
+					// Paramètre horodaté : aucun cache ne peut resservir un vieux jeton.
+					return fetch(NAYA.restUrl + '/nonce?_=' + Date.now(), { credentials: 'same-origin', cache: 'no-store' })
+						.then(function (r) { return r.json(); })
+						.then(function (data) {
+							if (!data || !data.nonce) return handleResponse(res);
+							NAYA.nonce = data.nonce;
+							return self.request(url, { method: options.method, body: options.body }, true);
+						})
+						.catch(function () { return handleResponse(res); });
+				});
 			});
 		},
 		chat: function (message, conversationId, honeypot) {
