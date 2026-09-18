@@ -36,6 +36,11 @@ class Naya_Cache {
 		if ( false !== $installed ) {
 			self::purge_all();
 		}
+
+		// Les copies versionnées trop anciennes ne servent plus.
+		if ( class_exists( 'Naya_Assets' ) ) {
+			Naya_Assets::prune();
+		}
 	}
 
 	/**

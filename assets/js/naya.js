@@ -5,26 +5,51 @@
 (function () {
 	'use strict';
 
-	// Les optimiseurs de scripts réordonnent parfois les balises : ce fichier
-	// peut alors s'exécuter avant ses propres données de configuration.
-	// Plutôt que d'abandonner, on patiente jusqu'à ce qu'elles arrivent.
-	if (typeof window.NAYA === 'undefined') {
-		var essais = 0;
-		var attente = setInterval(function () {
-			if (typeof window.NAYA !== 'undefined') {
-				clearInterval(attente);
-				demarrer();
-			} else if (++essais > 40) { // ~4 s, puis on renonce
-				clearInterval(attente);
-				if (window.console && console.warn) {
-					console.warn('[Naya] Configuration absente : le script du plugin a été chargé sans ses données. Vérifiez les réglages d\'optimisation JavaScript de votre cache.');
-				}
-			}
-		}, 100);
-		return;
+	/**
+	 * La configuration arrive par deux chemins : le script que WordPress
+	 * insère avant ce fichier, et l'attribut `data-naya-config` du widget.
+	 *
+	 * Les optimiseurs (LiteSpeed « retarder le JS »…) repoussent parfois le
+	 * premier jusqu'à la première interaction du visiteur, alors que ce
+	 * fichier s'exécute immédiatement. Le second voyage avec le HTML du
+	 * widget : dès que le widget est dans la page, la configuration aussi.
+	 */
+	function lireConfig() {
+		if (typeof window.NAYA !== 'undefined') return true;
+		var porteur = document.querySelector('[data-naya-config]');
+		if (!porteur) return false;
+		try {
+			window.NAYA = JSON.parse(porteur.getAttribute('data-naya-config'));
+			return true;
+		} catch (e) {
+			return false;
+		}
 	}
 
-	demarrer();
+	var demarre = false;
+	function lancer() {
+		if (demarre || !lireConfig()) return false;
+		demarre = true;
+		demarrer();
+		return true;
+	}
+
+	if (!lancer()) {
+		var reessayer = function () {
+			if (lancer()) return;
+			// Ultime tentative, une fois la page entièrement chargée.
+			window.addEventListener('load', function () {
+				if (!lancer() && window.console && console.warn) {
+					console.warn('[Naya] Configuration introuvable : ni données du script, ni attribut data-naya-config sur le widget.');
+				}
+			});
+		};
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', reessayer);
+		} else {
+			reessayer();
+		}
+	}
 
 	function demarrer() {
 
@@ -671,6 +696,27 @@
 		}).catch(function () { /* silencieux */ });
 	};
 
+	/**
+	 * Le clic a-t-il eu lieu dans l'un de ces conteneurs ?
+	 *
+	 * Piège : certains boutons disparaissent pendant leur propre clic (une
+	 * suggestion est retirée dès qu'on l'envoie, la carte d'avis se vide
+	 * après l'envoi). Quand l'événement remonte, l'élément n'est plus dans la
+	 * page et `contains()` répond « non » — le panneau se refermait alors à
+	 * tort. Le chemin de l'événement, lui, est figé au moment du clic.
+	 */
+	function clicInterne(e, conteneurs) {
+		var chemin = e.composedPath ? e.composedPath() : [];
+		for (var i = 0; i < conteneurs.length; i++) {
+			var c = conteneurs[i];
+			if (!c) continue;
+			if (chemin.indexOf(c) !== -1 || c.contains(e.target)) return true;
+		}
+		// Élément retiré de la page pendant le clic : il venait forcément de
+		// l'interface du chat, pas d'un clic extérieur.
+		return !document.documentElement.contains(e.target);
+	}
+
 	/* --------------------- Barre du haut (mode « bar ») ----------------- */
 
 	/**
@@ -745,10 +791,11 @@
 			if (e.key === 'Escape' && self.open) self.closePanel();
 		});
 
-		// Un clic à l'extérieur referme le panneau, sauf si on écrit dedans.
+		// Un clic à l'extérieur referme le panneau.
+		var barEl = this.widget.querySelector('#naya-bar');
 		document.addEventListener('click', function (e) {
 			if (!self.open) return;
-			if (self.panel.contains(e.target) || self.widget.querySelector('#naya-bar').contains(e.target)) return;
+			if (clicInterne(e, [self.panel, barEl])) return;
 			self.closePanel();
 		});
 	};

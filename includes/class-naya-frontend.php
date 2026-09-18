@@ -63,11 +63,16 @@ class Naya_Frontend {
 		) );
 	}
 
-	/** Fichiers du plugin à ne pas différer ni combiner. */
+	/**
+	 * Fichiers du plugin à ne pas différer ni combiner. Correspondance par
+	 * fragment : couvre le dossier du plugin, quel que soit son nom
+	 * (« naya », « Naya-main »…), comme les copies versionnées.
+	 */
 	public static function litespeed_file_excludes( $list ) {
 		$list = is_array( $list ) ? $list : array();
-		$list[] = 'naya/assets/css/naya.css';
-		$list[] = 'naya/assets/js/naya.js';
+		$list[] = 'assets/css/naya.css';
+		$list[] = 'assets/js/naya.js';
+		$list[] = 'naya-js-extra';
 		return $list;
 	}
 
@@ -88,24 +93,30 @@ class Naya_Frontend {
 			( is_singular() && has_shortcode( (string) get_post_field( 'post_content' ), 'naya_chat' ) );
 	}
 
-	public static function assets() {
-		$s = self::settings();
-
-		if ( ! $s['widget_enabled'] && ! self::is_chat_page() ) {
-			return;
+	/**
+	 * Configuration transmise au navigateur.
+	 *
+	 * Elle part par deux chemins : le script classique de WordPress, et un
+	 * attribut `data-naya-config` posé sur le widget lui-même. Le second est
+	 * indispensable : les optimiseurs retardent parfois le premier jusqu'à la
+	 * première interaction du visiteur, alors que le script du chat, lui,
+	 * démarre tout de suite — sans configuration, il resterait inerte.
+	 * Portée par le HTML du widget, elle est là dès que le widget est là.
+	 */
+	private static function config() {
+		static $config = null;
+		if ( null !== $config ) {
+			return $config;
 		}
 
-		wp_enqueue_style( 'naya', NAYA_PLUGIN_URL . 'assets/css/naya.css', array(), NAYA_VERSION );
-		wp_enqueue_script( 'naya', NAYA_PLUGIN_URL . 'assets/js/naya.js', array(), NAYA_VERSION, true );
+		$s = self::settings();
 
-		$suggestions = array_values( array_filter( array_map( 'trim', explode( "\n", $s['suggestions'] ) ) ) );
-
-		wp_localize_script( 'naya', 'NAYA', array(
+		$config = array(
 			'restUrl'  => esc_url_raw( rest_url( 'naya/v1' ) ),
 			'nonce'    => wp_create_nonce( 'wp_rest' ),
 			'botName'  => $s['bot_name'],
 			'welcome'  => $s['welcome_message'],
-			'sugg'     => $suggestions,
+			'sugg'     => array_values( array_filter( array_map( 'trim', explode( "\n", (string) $s['suggestions'] ) ) ) ),
 			'pageUrl'  => get_permalink( (int) get_option( 'naya_chat_page_id' ) ),
 			'teaser'   => array(
 				'enabled' => (int) $s['teaser_enabled'],
@@ -113,24 +124,46 @@ class Naya_Frontend {
 			),
 			'position' => $s['widget_position'],
 			'i18n'     => array(
-				'placeholder' => __( 'Écrivez votre message…', 'naya' ),
-				'error'       => __( 'Oups, une erreur est survenue. Réessayez.', 'naya' ),
-				'newChat'     => __( 'Nouvelle conversation', 'naya' ),
-				'online'      => __( 'En ligne', 'naya' ),
-				'thinking'    => __( 'Naya réfléchit…', 'naya' ),
-				'deleteConf'  => __( 'Supprimer cette conversation ?', 'naya' ),
-				'emptyList'   => __( 'Aucune conversation pour le moment.', 'naya' ),
-				'rateTitle'   => __( 'Cette conversation vous a-t-elle aidé ?', 'naya' ),
+				'placeholder'     => __( 'Écrivez votre message…', 'naya' ),
+				'error'           => __( 'Oups, une erreur est survenue. Réessayez.', 'naya' ),
+				'newChat'         => __( 'Nouvelle conversation', 'naya' ),
+				'online'          => __( 'En ligne', 'naya' ),
+				'thinking'        => __( 'Naya réfléchit…', 'naya' ),
+				'deleteConf'      => __( 'Supprimer cette conversation ?', 'naya' ),
+				'emptyList'       => __( 'Aucune conversation pour le moment.', 'naya' ),
+				'rateTitle'       => __( 'Cette conversation vous a-t-elle aidé ?', 'naya' ),
 				'ratePlaceholder' => __( 'Un commentaire ? (facultatif)', 'naya' ),
-				'rateSend'    => __( 'Envoyer mon avis', 'naya' ),
-				'rateThanks'  => __( 'Merci pour votre avis ! 💜', 'naya' ),
-				'endConfirm'  => __( 'Terminer cette conversation ?', 'naya' ),
-				'endTitle'    => __( 'Avant de partir…', 'naya' ),
-				'endSkip'     => __( 'Fermer sans noter', 'naya' ),
-				'endDone'     => __( 'À très vite ! 👋', 'naya' ),
-				'startHint'   => __( 'Choisissez une question ou écrivez la vôtre', 'naya' ),
+				'rateSend'        => __( 'Envoyer mon avis', 'naya' ),
+				'rateThanks'      => __( 'Merci pour votre avis ! 💜', 'naya' ),
+				'endConfirm'      => __( 'Terminer cette conversation ?', 'naya' ),
+				'endTitle'        => __( 'Avant de partir…', 'naya' ),
+				'endSkip'         => __( 'Fermer sans noter', 'naya' ),
+				'endDone'         => __( 'À très vite ! 👋', 'naya' ),
+				'startHint'       => __( 'Choisissez une question ou écrivez la vôtre', 'naya' ),
 			),
-		) );
+		);
+
+		return $config;
+	}
+
+	/** Attribut HTML portant la configuration, à poser sur chaque conteneur. */
+	private static function config_attr() {
+		return ' data-naya-config="' . esc_attr( wp_json_encode( self::config() ) ) . '"';
+	}
+
+	public static function assets() {
+		$s = self::settings();
+
+		if ( ! $s['widget_enabled'] && ! self::is_chat_page() ) {
+			return;
+		}
+
+		// Version inscrite dans le chemin : aucun cache ne peut resservir un
+		// ancien fichier après une mise à jour (voir Naya_Assets).
+		wp_enqueue_style( 'naya', Naya_Assets::url( 'assets/css/naya.css' ), array(), NAYA_VERSION );
+		wp_enqueue_script( 'naya', Naya_Assets::url( 'assets/js/naya.js' ), array(), NAYA_VERSION, true );
+
+		wp_localize_script( 'naya', 'NAYA', self::config() );
 
 		$css = sprintf(
 			':root{--naya-c1:%1$s;--naya-c2:%2$s;}',
@@ -237,7 +270,7 @@ class Naya_Frontend {
 			return;
 		}
 		?>
-		<div id="naya-widget" data-naya-mode="widget">
+		<div id="naya-widget" data-naya-mode="widget"<?php echo self::config_attr(); // phpcs:ignore WordPress.Security.EscapeOutput -- échappé dans config_attr() ?>>
 			<?php if ( ! empty( $s['teaser_enabled'] ) && ! empty( $s['teaser_message'] ) ) : ?>
 				<div id="naya-teaser" class="naya-hidden" role="button" tabindex="0">
 					<div class="naya-teaser-avatar" aria-hidden="true">✦</div>
@@ -310,7 +343,7 @@ class Naya_Frontend {
 	private static function render_bar( $s ) {
 		$page_url = get_permalink( (int) get_option( 'naya_chat_page_id' ) );
 		?>
-		<div id="naya-widget" class="naya-mode-bar" data-naya-mode="widget">
+		<div id="naya-widget" class="naya-mode-bar" data-naya-mode="widget"<?php echo self::config_attr(); // phpcs:ignore WordPress.Security.EscapeOutput -- échappé dans config_attr() ?>>
 
 			<div id="naya-bar" role="region" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
 				<div class="naya-bar-inner">
@@ -382,7 +415,7 @@ class Naya_Frontend {
 		$s = self::settings();
 		ob_start();
 		?>
-		<div id="naya-page" data-naya-mode="page">
+		<div id="naya-page" data-naya-mode="page"<?php echo self::config_attr(); // phpcs:ignore WordPress.Security.EscapeOutput -- échappé dans config_attr() ?>>
 			<aside class="naya-sidebar">
 				<button class="naya-new-chat">＋ <?php esc_html_e( 'Nouvelle conversation', 'naya' ); ?></button>
 				<div class="naya-conv-list"></div>

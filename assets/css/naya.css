@@ -19,7 +19,7 @@
 /* Sentinelle : le JavaScript lit cette variable pour vérifier que cette
    feuille est bien chargée. Une extension de cache servant un fichier périmé
    ne la contiendrait pas, et l'avertissement partirait en console. */
-#naya-widget, #naya-page { --naya-css: "2.1.2"; }
+#naya-widget, #naya-page { --naya-css: "2.1.5"; }
 
 #naya-widget, #naya-page { font-family: var(--naya-font); }
 #naya-widget *, #naya-page * { box-sizing: border-box; }

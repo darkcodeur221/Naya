@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.1.4
+Stable tag: 2.1.5
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,12 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.1.5 =
+* Correctif majeur : derrière Cloudflare, les visiteurs recevaient des fichiers naya.css / naya.js vieux de plusieurs mois (cache d'un an, paramètre ?ver= supprimé par l'optimiseur). Les fichiers sont désormais servis depuis un chemin qui contient la version (uploads/naya/<version>/), donc chaque mise à jour est vue immédiatement
+* La configuration du widget est aussi portée par l'attribut data-naya-config du HTML : Naya démarre même quand LiteSpeed retarde ou réordonne les scripts (« Delay JS »)
+* Barre du header : cliquer sur une suggestion ne referme plus le panneau, et le bouton rouge « Terminer » s'affiche bien pendant la conversation
+* Les anciennes copies versionnées sont nettoyées automatiquement (3 versions conservées)
 
 = 2.1.4 =
 * Correctif majeur : Naya fonctionnait pour l'administrateur mais pas pour les visiteurs sur un site avec LiteSpeed Cache. Les visiteurs anonymes n'ont plus besoin de jeton de sécurité ; ils sont protégés par une vérification d'origine sans état, que le cache ne peut pas figer. Les comptes connectés gardent le jeton
