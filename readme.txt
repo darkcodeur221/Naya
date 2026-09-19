@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.1.5
+Stable tag: 2.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,12 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.2.0 =
+* Nouvelle fenêtre de conversation : modale centrée sur un voile flouté, le site reste visible derrière le flou. Rien ne passe par-dessus (bandeau cookies, boutons flottants du thème) et la page ne défile plus en arrière-plan
+* Mobile : feuille plein écran qui glisse du bas, avec un liseré du site flouté en haut. Elle suit la hauteur réellement visible quand le clavier s'ouvre, se ferme en glissant l'en-tête vers le bas ou avec le bouton « retour » du téléphone
+* Nouvel écran d'accueil : avatar animé, message de bienvenue centré et questions proposées en grandes cartes faciles à toucher, au lieu d'un grand vide
+* Accessibilité : focus clavier maintenu dans la fenêtre, Échap pour fermer, focus rendu à la barre à la fermeture
 
 = 2.1.5 =
 * Correctif majeur : derrière Cloudflare, les visiteurs recevaient des fichiers naya.css / naya.js vieux de plusieurs mois (cache d'un an, paramètre ?ver= supprimé par l'optimiseur). Les fichiers sont désormais servis depuis un chemin qui contient la version (uploads/naya/<version>/), donc chaque mise à jour est vue immédiatement

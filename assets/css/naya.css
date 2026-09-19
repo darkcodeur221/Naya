@@ -19,7 +19,7 @@
 /* Sentinelle : le JavaScript lit cette variable pour vérifier que cette
    feuille est bien chargée. Une extension de cache servant un fichier périmé
    ne la contiendrait pas, et l'avertissement partirait en console. */
-#naya-widget, #naya-page { --naya-css: "2.1.5"; }
+#naya-widget, #naya-page { --naya-css: "2.2.0"; }
 
 #naya-widget, #naya-page { font-family: var(--naya-font); }
 #naya-widget *, #naya-page * { box-sizing: border-box; }
@@ -192,46 +192,218 @@
 .naya-bar-toggle { position: relative; }
 
 /* --------------------------------------------------------------------------
-   Panneau de conversation déployé sous la barre
+   Fenêtre de conversation : modale centrée sur un voile flouté
+   Le site reste perceptible derrière le flou — on ne quitte pas la page —
+   mais toute l'attention va à l'échange. Couches au plus haut : rien
+   (bandeau cookies, bouton flottant du thème) ne doit passer par-dessus.
    -------------------------------------------------------------------------- */
+#naya-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 2147483645;
+	background:
+		radial-gradient(900px 500px at 50% 0%, color-mix(in srgb, var(--naya-c1) 22%, transparent), transparent 70%),
+		rgba(18, 12, 40, 0.42);
+	-webkit-backdrop-filter: blur(12px) saturate(140%);
+	backdrop-filter: blur(12px) saturate(140%);
+	animation: naya-veil-in 0.3s ease both;
+}
+#naya-backdrop.naya-hidden { display: none; }
+#naya-backdrop.naya-backdrop-out { animation: naya-veil-out 0.26s ease forwards; }
+@keyframes naya-veil-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes naya-veil-out { to { opacity: 0; } }
+
+/* Navigateurs sans flou : un voile plus dense garde la lisibilité. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	#naya-backdrop { background: rgba(18, 12, 40, 0.72); }
+}
+
+/* Le site ne défile plus sous la fenêtre. */
+html.naya-modal-open,
+html.naya-modal-open body { overflow: hidden !important; }
+
 #naya-panel {
 	position: fixed;
-	top: 58px;
+	top: 50%;
 	left: 50%;
-	transform: translateX(-50%);
-	z-index: 99996;
-	width: min(720px, calc(100vw - 24px));
-	height: min(72vh, 620px);
+	transform: translate(-50%, -50%);
+	z-index: 2147483646;
+	width: min(820px, calc(100vw - 48px));
+	height: min(780px, calc(100vh - 48px));
+	height: min(780px, calc(100dvh - 48px));
 	background: var(--naya-bg);
-	border-radius: 0 0 22px 22px;
-	box-shadow: 0 24px 60px -12px rgba(20, 10, 50, 0.4);
+	border-radius: 28px;
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.5),
+		0 40px 100px -20px rgba(15, 8, 40, 0.55);
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
-	transform-origin: top center;
-	animation: naya-panel-in 0.34s cubic-bezier(0.34, 1.3, 0.5, 1);
+	animation: naya-modal-in 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
 }
 #naya-panel.naya-hidden { display: none; }
-#naya-panel.naya-panel-out { animation: naya-panel-out 0.22s ease-in forwards; }
+#naya-panel.naya-panel-out { animation: naya-modal-out 0.24s ease-in forwards; }
 
-@keyframes naya-panel-in {
-	from { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.98); }
-	to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+@keyframes naya-modal-in {
+	from { opacity: 0; transform: translate(-50%, -46%) scale(0.94); }
+	to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
-@keyframes naya-panel-out {
-	to { opacity: 0; transform: translateX(-50%) translateY(-12px) scale(0.98); }
+@keyframes naya-modal-out {
+	to { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
 }
 
 .naya-panel-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 10px 16px;
+	gap: 12px;
+	padding: 14px 18px;
 	border-bottom: 1px solid rgba(20, 10, 50, 0.07);
 	background: var(--naya-bg);
 	flex-shrink: 0;
 }
-.naya-panel-title { font-size: 13px; font-weight: 700; color: var(--naya-muted); letter-spacing: 0.03em; }
+.naya-panel-id { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.naya-panel-avatar {
+	width: 40px;
+	height: 40px;
+	border-radius: 14px;
+	background: var(--naya-grad);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 18px;
+	flex-shrink: 0;
+	box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--naya-c1) 55%, transparent);
+}
+.naya-panel-meta { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.naya-panel-title { font-size: 15.5px; font-weight: 700; color: var(--naya-text); }
+.naya-panel-status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--naya-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.naya-panel-status .naya-dot { width: 7px; height: 7px; flex-shrink: 0; animation: naya-live 2.4s ease-in-out infinite; }
+@keyframes naya-live {
+	0%, 100% { box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.3); }
+	50% { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.12); }
+}
+
+/* --------------------------------------------------------------------------
+   Écran d'accueil : centré, avec les questions en grandes cartes
+   -------------------------------------------------------------------------- */
+.naya-hero {
+	margin: auto 0; /* centre verticalement sans rogner si ça déborde */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 14px;
+	padding: 12px 4px;
+	width: 100%;
+	max-width: 560px;
+	align-self: center;
+}
+.naya-hero-orb {
+	position: relative;
+	width: 72px;
+	height: 72px;
+	border-radius: 24px;
+	background: var(--naya-grad);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 30px;
+	box-shadow: 0 16px 36px -10px color-mix(in srgb, var(--naya-c1) 60%, transparent);
+	animation: naya-orb-in 0.6s cubic-bezier(0.34, 1.5, 0.5, 1) both, naya-orb-float 5s ease-in-out 0.6s infinite;
+}
+.naya-hero-orb::after {
+	content: '';
+	position: absolute;
+	inset: -8px;
+	border-radius: 30px;
+	border: 2px solid color-mix(in srgb, var(--naya-c1) 30%, transparent);
+	animation: naya-orb-ring 2.8s ease-out 0.8s infinite;
+}
+@keyframes naya-orb-in { from { opacity: 0; transform: scale(0.5) rotate(-12deg); } to { opacity: 1; transform: none; } }
+@keyframes naya-orb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes naya-orb-ring { from { opacity: 0.9; transform: scale(0.9); } to { opacity: 0; transform: scale(1.25); } }
+
+.naya-hero-text {
+	margin: 0;
+	font-size: 17px;
+	line-height: 1.5;
+	font-weight: 600;
+	color: var(--naya-text);
+	max-width: 440px;
+	animation: naya-fade-up 0.5s 0.15s ease both;
+}
+.naya-hero .naya-start-hint { padding: 0; font-size: 12.5px; }
+/* Flex plutôt que grille : une carte orpheline se centre au lieu de
+   rester collée à gauche. */
+.naya-hero-cards {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px;
+	width: 100%;
+	margin-top: 4px;
+}
+#naya-widget .naya-hero-card,
+#naya-page .naya-hero-card {
+	position: relative !important;
+	display: flex !important;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex: 1 1 220px;
+	width: auto !important;
+	max-width: calc(50% - 5px) !important;
+	padding: 14px 16px !important;
+	border: 1px solid rgba(20, 10, 50, 0.08) !important;
+	border-radius: 16px !important;
+	background: var(--naya-bg) !important;
+	color: var(--naya-text) !important;
+	font-size: 14px !important;
+	font-weight: 600;
+	line-height: 1.35 !important;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 2px 10px rgba(20, 10, 50, 0.05) !important;
+	transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+	animation: naya-sugg-in 0.45s cubic-bezier(0.34, 1.4, 0.5, 1) both;
+	-webkit-tap-highlight-color: transparent;
+}
+.naya-hero-card-go {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: color-mix(in srgb, var(--naya-c1) 10%, #fff);
+	color: var(--naya-c1);
+	font-size: 14px;
+	transition: transform 0.18s, background 0.18s, color 0.18s;
+}
+#naya-widget .naya-hero-card:hover,
+#naya-page .naya-hero-card:hover {
+	transform: translateY(-2px);
+	border-color: color-mix(in srgb, var(--naya-c1) 40%, transparent) !important;
+	box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--naya-c1) 35%, transparent) !important;
+}
+/* Fenêtre flottante étroite : une carte par ligne. */
+#naya-widget #naya-window .naya-hero-card { flex-basis: 100%; max-width: 100% !important; }
+.naya-hero-card:hover .naya-hero-card-go { background: var(--naya-grad); color: #fff; transform: translateX(2px); }
+#naya-widget .naya-hero-card:active,
+#naya-page .naya-hero-card:active { transform: scale(0.97); }
 .naya-panel-tools { display: flex; align-items: center; gap: 6px; }
 .naya-panel-tools button, .naya-panel-tools .naya-expand {
 	width: 30px;
@@ -1180,15 +1352,50 @@
 	.naya-bar-send { padding: 0 14px !important; }
 	.naya-bar-minimize { display: none; }
 	.naya-bar-input { font-size: 16px !important; } /* évite le zoom auto iOS */
+	/* Feuille plein écran : un liseré du site flouté reste visible en haut,
+	   repère rassurant — on n'a pas quitté la page. La hauteur suit la zone
+	   réellement visible (--naya-vvh, clavier compris). */
 	#naya-panel {
-		top: 52px;
-		width: 100vw;
-		height: calc(100dvh - 52px);
-		border-radius: 18px 18px 0 0;
+		--naya-gap: max(14px, calc(env(safe-area-inset-top) + 8px));
+		top: calc(var(--naya-vvtop, 0px) + var(--naya-gap));
+		left: 0;
+		right: 0;
+		bottom: auto;
+		transform: none;
+		width: 100%;
+		height: calc(100vh - var(--naya-gap));
+		height: calc(var(--naya-vvh, 100dvh) - var(--naya-gap));
+		border-radius: 24px 24px 0 0;
+		box-shadow: 0 -12px 40px -8px rgba(15, 8, 40, 0.45);
+		/* « backwards » et non « both » : une fois arrivée, l'animation
+		   rend la main au style en ligne qui fait suivre le doigt. */
+		animation: naya-sheet-up 0.42s cubic-bezier(0.22, 1.1, 0.36, 1) backwards;
+		transition: top 0.2s ease, height 0.2s ease, border-radius 0.2s ease, transform 0.25s ease;
 	}
-	@supports not (height: 100dvh) {
-		#naya-panel { height: calc(100vh - 52px); }
+	/* Clavier ouvert : chaque pixel compte, la feuille prend tout. */
+	#naya-panel.naya-kbd {
+		--naya-gap: 0px;
+		border-radius: 0;
 	}
+	#naya-panel.naya-panel-out { animation: naya-sheet-down 0.26s ease-in forwards; }
+	@keyframes naya-sheet-up {
+		from { transform: translateY(100%); }
+		to { transform: translateY(0); }
+	}
+	@keyframes naya-sheet-down {
+		to { transform: translateY(100%); }
+	}
+
+	.naya-panel-head { padding: 4px 14px 10px; }
+	.naya-panel-avatar { width: 36px; height: 36px; border-radius: 12px; font-size: 16px; }
+	.naya-panel-status { max-width: 42vw; }
+
+	/* Accueil mobile : cartes empilées, pleine largeur, pouce-friendly. */
+	.naya-hero { gap: 12px; padding-top: 4px; }
+	.naya-hero-orb { width: 60px; height: 60px; border-radius: 20px; font-size: 26px; }
+	.naya-hero-text { font-size: 16px; }
+	.naya-hero-cards { gap: 8px; }
+	#naya-widget .naya-hero-card { flex-basis: 100%; max-width: 100% !important; padding: 15px 16px !important; font-size: 15px !important; }
 }
 /* --------------------------------------------------------------------------
    Confort mobile
@@ -1218,8 +1425,10 @@
 	}
 
 	/* Glissement vers le bas : le panneau suit le doigt. */
+	/* Pas de « animation: none » ici : en la retirant au lâcher, le
+	   navigateur rejouerait l'animation d'ouverture. */
 	#naya-window.naya-dragging,
-	#naya-panel.naya-dragging { animation: none; transition: none; }
+	#naya-panel.naya-dragging { transition: none; }
 	#naya-window.naya-sheet-out,
 	#naya-panel.naya-sheet-out {
 		animation: naya-sheet-out 0.24s ease-in forwards;

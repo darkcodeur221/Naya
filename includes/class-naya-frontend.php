@@ -58,7 +58,7 @@ class Naya_Frontend {
 		$list = is_array( $list ) ? $list : array();
 		return array_merge( $list, array(
 			'#naya-widget', '#naya-bar', '#naya-panel', '#naya-window',
-			'#naya-launcher', '#naya-teaser', '#naya-tab', '#naya-page',
+			'#naya-launcher', '#naya-teaser', '#naya-tab', '#naya-page', '#naya-backdrop',
 			'.naya-',
 		) );
 	}
@@ -202,14 +202,17 @@ class Naya_Frontend {
 			// Positionnement — l'essentiel : sortir les conteneurs du flux.
 			. '#naya-bar{position:fixed;top:0;left:0;right:0;z-index:99997;'
 			. 'background:linear-gradient(135deg,var(--naya-c1),var(--naya-c2));color:#fff;}'
-			. '#naya-panel{position:fixed;z-index:99996;background:#fff;}'
+			. '#naya-panel{position:fixed;z-index:2147483646;background:#fff;}'
+			. '#naya-backdrop{position:fixed;inset:0;z-index:2147483645;background:rgba(18,12,40,.42);'
+			. '-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);}'
+			. 'html.naya-modal-open,html.naya-modal-open body{overflow:hidden !important;}'
 			. '#naya-window{position:fixed;right:24px;bottom:24px;z-index:99999;background:#fff;}'
 			. '#naya-launcher{position:fixed;right:24px;bottom:24px;z-index:99998;}'
 			. '#naya-teaser{position:fixed;z-index:99998;background:#fff;}'
 			. '#naya-tab{position:fixed;top:0;right:24px;z-index:99997;}'
 
 			// Ce qui doit rester caché le reste, quoi qu'il arrive.
-			. '#naya-window.naya-hidden,#naya-panel.naya-hidden,#naya-teaser.naya-hidden,'
+			. '#naya-window.naya-hidden,#naya-panel.naya-hidden,#naya-teaser.naya-hidden,#naya-backdrop.naya-hidden,'
 			. '#naya-tab.naya-hidden,.naya-end-btn.naya-hidden{display:none !important;}'
 
 			// Barre réduite : sans cette règle, la barre et son onglet de
@@ -376,10 +379,19 @@ class Naya_Frontend {
 				</div>
 			</div>
 
-			<div id="naya-panel" class="naya-hidden" role="dialog" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
+			<?php // Voile flouté posé sur le site pendant la conversation. ?>
+			<div id="naya-backdrop" class="naya-hidden" aria-hidden="true"></div>
+
+			<div id="naya-panel" class="naya-hidden" role="dialog" aria-modal="true" aria-label="<?php echo esc_attr( $s['bot_name'] ); ?>">
 				<button type="button" class="naya-grabber" aria-label="<?php esc_attr_e( 'Fermer en glissant vers le bas', 'naya' ); ?>"></button>
 				<div class="naya-panel-head">
-					<span class="naya-panel-title"><?php echo esc_html( $s['bot_name'] ); ?></span>
+					<div class="naya-panel-id">
+						<span class="naya-panel-avatar" aria-hidden="true">✦</span>
+						<span class="naya-panel-meta">
+							<strong class="naya-panel-title"><?php echo esc_html( $s['bot_name'] ); ?></strong>
+							<span class="naya-panel-status"><span class="naya-dot"></span><?php echo esc_html( $s['bar_tagline'] ); ?></span>
+						</span>
+					</div>
 					<div class="naya-panel-tools">
 						<?php self::end_button(); ?>
 						<button type="button" class="naya-rate-btn" title="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>" aria-label="<?php esc_attr_e( 'Noter la conversation', 'naya' ); ?>">★</button>

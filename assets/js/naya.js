@@ -202,6 +202,7 @@
 		this.endBtn = root.querySelector('.naya-end-btn');
 		this.grabber = root.querySelector('.naya-grabber');
 		this.sheet = root.querySelector('#naya-window') || root.querySelector('#naya-panel');
+		this.backdrop = root.querySelector('#naya-backdrop');
 		this.conversationId = parseInt(sessionStorage.getItem('naya_conv') || '0', 10) || 0;
 		this.busy = false;
 
@@ -341,6 +342,10 @@
 			var y = (e.touches ? e.touches[0].clientY : e.clientY);
 			delta = Math.max(0, y - startY);
 			self.sheet.style.transform = 'translateY(' + delta + 'px)';
+			// Le voile s'estompe à mesure que la feuille descend.
+			if (self.backdrop) {
+				self.backdrop.style.opacity = String(Math.max(0.2, 1 - delta / (self.sheet.offsetHeight || 600)));
+			}
 			if (e.cancelable) e.preventDefault();
 		};
 
@@ -348,17 +353,37 @@
 			if (!dragging) return;
 			dragging = false;
 			self.sheet.classList.remove('naya-dragging');
-			self.sheet.style.transform = '';
 
-			// Au-delà d'un quart de la hauteur, le geste vaut fermeture.
+			var remettre = function () {
+				self.sheet.style.transform = '';
+				if (self.backdrop) self.backdrop.style.opacity = '';
+			};
+
+			// Au-delà d'un quart de la hauteur, le geste vaut fermeture : la
+			// feuille repart d'où le doigt l'a laissée, sans sursaut.
 			if (delta > Math.min(160, self.sheet.offsetHeight * 0.25)) {
 				self.requestClose();
+				setTimeout(remettre, 320);
+			} else {
+				remettre();
 			}
 		};
 
 		this.grabber.addEventListener('touchstart', onStart, { passive: true });
 		this.grabber.addEventListener('touchmove', onMove, { passive: false });
 		this.grabber.addEventListener('touchend', onEnd);
+
+		// L'en-tête entier sert aussi de poignée : la cible est bien plus
+		// facile à attraper au pouce. Ses boutons gardent leur rôle.
+		var tete = this.sheet.querySelector('.naya-panel-head, .naya-header');
+		if (tete) {
+			tete.addEventListener('touchstart', function (e) {
+				if (e.target.closest && e.target.closest('button, a')) return;
+				onStart(e);
+			}, { passive: true });
+			tete.addEventListener('touchmove', onMove, { passive: false });
+			tete.addEventListener('touchend', onEnd);
+		}
 		this.grabber.addEventListener('mousedown', onStart);
 		document.addEventListener('mousemove', onMove);
 		document.addEventListener('mouseup', onEnd);
@@ -473,42 +498,78 @@
 		this.scroll();
 	};
 
+	/**
+	 * Accueil : plutôt qu'une bulle perdue en haut et des suggestions
+	 * reléguées en bas — avec un grand vide entre les deux —, on compose un
+	 * écran d'accueil centré : avatar animé, message, et les questions
+	 * proposées sous forme de grandes cartes faciles à toucher.
+	 */
 	Chat.prototype.showWelcome = function () {
+		var self = this;
 		this.messagesEl.innerHTML = '';
+		this.suggEl.innerHTML = '';
+		this.root.classList.add('naya-welcoming');
+
+		var hero = document.createElement('div');
+		hero.className = 'naya-hero';
+
+		var orb = document.createElement('div');
+		orb.className = 'naya-hero-orb';
+		orb.setAttribute('aria-hidden', 'true');
+		orb.innerHTML = '<span>✦</span>';
+		hero.appendChild(orb);
+
 		if (NAYA.welcome) {
-			this.append('assistant', NAYA.welcome);
+			var title = document.createElement('p');
+			title.className = 'naya-hero-text';
+			title.innerHTML = renderRich(NAYA.welcome);
+			hero.appendChild(title);
 		}
-		// Une ligne d'invitation lève l'hésitation du « par où commencer ».
-		if ((NAYA.sugg || []).length && NAYA.i18n.startHint) {
-			var hint = document.createElement('div');
-			hint.className = 'naya-start-hint';
-			hint.textContent = NAYA.i18n.startHint;
-			this.messagesEl.appendChild(hint);
+
+		var sugg = NAYA.sugg || [];
+		if (sugg.length) {
+			if (NAYA.i18n.startHint) {
+				var hint = document.createElement('div');
+				hint.className = 'naya-start-hint';
+				hint.textContent = NAYA.i18n.startHint;
+				hero.appendChild(hint);
+			}
+			var cards = document.createElement('div');
+			cards.className = 'naya-hero-cards';
+			sugg.forEach(function (text, i) {
+				var b = document.createElement('button');
+				b.type = 'button';
+				b.className = 'naya-hero-card';
+				b.style.animationDelay = (0.12 + i * 0.07) + 's';
+				b.innerHTML = '<span class="naya-hero-card-text"></span><span class="naya-hero-card-go" aria-hidden="true">→</span>';
+				b.firstChild.textContent = text;
+				b.addEventListener('click', function () { self.sendText(text); });
+				cards.appendChild(b);
+			});
+			hero.appendChild(cards);
 		}
-		this.renderSuggestions();
+
+		this.messagesEl.appendChild(hero);
+		this.messagesEl.scrollTop = 0;
 		this.toggleEndButton(false);
+	};
+
+	/**
+	 * Premier message envoyé : l'écran d'accueil cède la place au fil, en
+	 * gardant le mot de bienvenue comme première bulle pour le contexte.
+	 */
+	Chat.prototype.leaveWelcome = function () {
+		var hero = this.messagesEl.querySelector('.naya-hero');
+		if (!hero) return;
+		hero.remove();
+		this.root.classList.remove('naya-welcoming');
+		if (NAYA.welcome) this.append('assistant', NAYA.welcome);
 	};
 
 	/** Le bouton « Terminer » n'a de sens qu'une fois l'échange engagé. */
 	Chat.prototype.toggleEndButton = function (show) {
 		if (!this.endBtn) return;
 		this.endBtn.classList.toggle('naya-hidden', !show);
-	};
-
-	Chat.prototype.renderSuggestions = function () {
-		var self = this;
-		this.suggEl.innerHTML = '';
-		(NAYA.sugg || []).forEach(function (text) {
-			var b = document.createElement('button');
-			b.type = 'button';
-			b.className = 'naya-sugg';
-			b.textContent = text;
-			b.addEventListener('click', function () {
-				self.input.value = text;
-				self.send();
-			});
-			self.suggEl.appendChild(b);
-		});
 	};
 
 	Chat.prototype.append = function (role, content) {
@@ -566,6 +627,7 @@
 		this.busy = true;
 		this.sendBtn.disabled = true;
 		this.suggEl.innerHTML = '';
+		this.leaveWelcome();
 
 		this.append('user', text);
 		this.typing(true);
@@ -601,6 +663,7 @@
 				self.conversationId = id;
 				sessionStorage.setItem('naya_conv', String(id));
 				self.messagesEl.innerHTML = '';
+				self.root.classList.remove('naya-welcoming');
 				if (!messages.length && NAYA.welcome) {
 					self.append('assistant', NAYA.welcome);
 				}
@@ -727,14 +790,18 @@
 		this.widget = widget;
 		this.chat = chat;
 		this.panel = document.getElementById('naya-panel');
+		this.backdrop = document.getElementById('naya-backdrop');
 		this.tab = document.getElementById('naya-tab');
 		this.toggle = widget.querySelector('.naya-bar-toggle');
 		this.form = widget.querySelector('.naya-bar-form');
 		this.input = widget.querySelector('.naya-bar-input');
 		this.open = false;
 		this.unread = 0;
+		this.historique = false;
+		this.retourFocus = null;
 
 		this.bind();
+		this.suivreClavier();
 
 		// Une barre réduite le reste le temps de la navigation.
 		if (sessionStorage.getItem('naya_bar_minimized')) {
@@ -749,10 +816,12 @@
 		this.form.addEventListener('submit', function (e) {
 			e.preventDefault();
 			var text = self.input.value.trim();
-			if (!text) { self.openPanel(); return; }
+			// Sans texte, on ouvre sur l'écran d'accueil et ses cartes :
+			// inutile de faire surgir le clavier par-dessus.
+			if (!text) { self.openPanel({ clavier: false }); return; }
 			var hp = self.form.querySelector('.naya-hp');
 			self.input.value = '';
-			self.openPanel();
+			self.openPanel({ clavier: false });
 			self.chat.sendText(text, hp ? hp.value : '');
 		});
 
@@ -765,11 +834,41 @@
 			}
 		});
 
-		// Cliquer dans le champ donne déjà envie d'écrire : on déploie.
-		this.input.addEventListener('focus', function () { self.openPanel(); });
+		// Toucher le champ, c'est vouloir écrire : la fenêtre s'ouvre et la
+		// saisie s'y poursuit directement, clavier compris.
+		this.input.addEventListener('focus', function () {
+			if (self.open) return;
+			self.openPanel({ clavier: true });
+		});
 
 		this.toggle.addEventListener('click', function () {
-			self.open ? self.closePanel() : self.openPanel();
+			self.open ? self.closePanel() : self.openPanel({ clavier: false });
+		});
+
+		if (this.backdrop) {
+			this.backdrop.addEventListener('click', function () { self.closePanel(); });
+		}
+
+		// Bouton « retour » du téléphone : il referme la fenêtre au lieu de
+		// quitter la page — le réflexe de tout utilisateur mobile.
+		window.addEventListener('popstate', function () {
+			if (!self.historique) return;
+			self.historique = false;
+			if (self.open) self.closePanel();
+		});
+
+		// Le focus clavier reste prisonnier de la fenêtre tant qu'elle est ouverte.
+		document.addEventListener('keydown', function (e) {
+			if (!self.open || e.key !== 'Tab') return;
+			var f = Array.prototype.filter.call(
+				self.panel.querySelectorAll('button, a[href], textarea, input:not(.naya-hp)'),
+				function (el) { return !el.disabled && el.offsetParent !== null; }
+			);
+			if (!f.length) return;
+			var premier = f[0], dernier = f[f.length - 1];
+			if (e.shiftKey && document.activeElement === premier) { e.preventDefault(); dernier.focus(); }
+			else if (!e.shiftKey && document.activeElement === dernier) { e.preventDefault(); premier.focus(); }
+			else if (!self.panel.contains(document.activeElement)) { e.preventDefault(); premier.focus(); }
 		});
 
 		var minimize = this.widget.querySelector('.naya-bar-minimize');
@@ -791,24 +890,70 @@
 			if (e.key === 'Escape' && self.open) self.closePanel();
 		});
 
-		// Un clic à l'extérieur referme le panneau.
-		var barEl = this.widget.querySelector('#naya-bar');
-		document.addEventListener('click', function (e) {
-			if (!self.open) return;
-			if (clicInterne(e, [self.panel, barEl])) return;
-			self.closePanel();
-		});
+		// Un clic à l'extérieur referme le panneau. Avec le voile, c'est lui
+		// qui reçoit ce clic ; sans lui (page en cache antérieure), on écoute
+		// le document. Le délai écarte le clic qui vient d'ouvrir la fenêtre
+		// depuis un bouton extérieur (en-tête du thème qui pilote la barre).
+		if (!this.backdrop) {
+			var barEl = this.widget.querySelector('#naya-bar');
+			document.addEventListener('click', function (e) {
+				if (!self.open || Date.now() - self.ouvertA < 300) return;
+				if (clicInterne(e, [self.panel, barEl])) return;
+				self.closePanel();
+			});
+		}
 	};
 
-	Bar.prototype.openPanel = function () {
+	/** Écran tactile ou étroit : on y adopte les réflexes mobiles. */
+	function estMobile() {
+		return window.matchMedia && window.matchMedia('(max-width: 600px), (pointer: coarse)').matches;
+	}
+
+	/**
+	 * @param {Object} [options]
+	 * @param {boolean} [options.clavier] Placer la saisie dans la fenêtre.
+	 *        Sur mobile, seulement quand le visiteur a touché le champ : sinon
+	 *        le clavier masquerait l'écran d'accueil et ses cartes.
+	 */
+	Bar.prototype.openPanel = function (options) {
 		if (this.open) return;
+		var self = this;
+		var clavier = !options || options.clavier !== false || !estMobile();
+
 		this.open = true;
+		this.ouvertA = Date.now();
 		this.unread = 0;
 		this.renderCount();
+		this.retourFocus = document.activeElement === this.input ? this.toggle : document.activeElement;
+
 		this.widget.classList.add('naya-panel-open');
+		document.documentElement.classList.add('naya-modal-open');
+		this.verrouiller(true);
+
+		if (this.backdrop) this.backdrop.classList.remove('naya-hidden', 'naya-backdrop-out');
 		this.panel.classList.remove('naya-hidden', 'naya-panel-out');
 		this.toggle.setAttribute('aria-expanded', 'true');
-		this.chat.scroll();
+		if (this.majClavier) this.majClavier();
+
+		if (estMobile() && window.history && history.pushState) {
+			history.pushState({ nayaModal: true }, '');
+			this.historique = true;
+		}
+
+		// La saisie passe du champ de la barre, désormais sous le voile, à
+		// celui de la fenêtre — dans le même geste, pour que le clavier
+		// mobile reste ouvert.
+		if (clavier) {
+			this.chat.input.focus({ preventScroll: true });
+		} else {
+			if (document.activeElement === this.input) this.input.blur();
+			var fermer = this.panel.querySelector('.naya-panel-close');
+			if (fermer && !estMobile()) fermer.focus({ preventScroll: true });
+		}
+
+		if (!this.chat.root.classList.contains('naya-welcoming')) {
+			requestAnimationFrame(function () { self.chat.scroll(); });
+		}
 	};
 
 	Bar.prototype.closePanel = function () {
@@ -818,10 +963,67 @@
 		this.widget.classList.remove('naya-panel-open');
 		this.toggle.setAttribute('aria-expanded', 'false');
 		this.panel.classList.add('naya-panel-out');
+		if (this.backdrop) this.backdrop.classList.add('naya-backdrop-out');
+		if (document.activeElement && this.panel.contains(document.activeElement)) {
+			document.activeElement.blur();
+		}
+
+		// Fermeture par l'interface : on retire l'entrée d'historique ajoutée
+		// à l'ouverture, sinon « retour » semblerait ne rien faire.
+		if (this.historique) {
+			this.historique = false;
+			if (history.state && history.state.nayaModal) history.back();
+		}
+
 		setTimeout(function () {
+			if (self.open) return;
 			self.panel.classList.add('naya-hidden');
 			self.panel.classList.remove('naya-panel-out');
-		}, 220);
+			if (self.backdrop) {
+				self.backdrop.classList.add('naya-hidden');
+				self.backdrop.classList.remove('naya-backdrop-out');
+			}
+			document.documentElement.classList.remove('naya-modal-open');
+			self.verrouiller(false);
+			if (self.retourFocus && self.retourFocus.focus && !estMobile()) {
+				self.retourFocus.focus({ preventScroll: true });
+			}
+		}, 260);
+	};
+
+	/**
+	 * Bloque le défilement du site sous la fenêtre, sans saut de mise en
+	 * page : la largeur de la barre de défilement est compensée.
+	 */
+	Bar.prototype.verrouiller = function (actif) {
+		var body = document.body;
+		if (actif) {
+			var largeur = window.innerWidth - document.documentElement.clientWidth;
+			if (largeur > 0) body.style.paddingRight = largeur + 'px';
+		} else {
+			body.style.paddingRight = '';
+		}
+	};
+
+	/**
+	 * Clavier mobile : la hauteur visible rétrécit. La fenêtre suit la zone
+	 * réellement visible pour que le champ de saisie ne passe jamais sous le
+	 * clavier, et abandonne ses marges quand la place manque.
+	 */
+	Bar.prototype.suivreClavier = function () {
+		var vv = window.visualViewport;
+		if (!vv) return;
+		var self = this;
+		this.majClavier = function () {
+			if (!self.open) return;
+			self.panel.style.setProperty('--naya-vvh', vv.height + 'px');
+			self.panel.style.setProperty('--naya-vvtop', vv.offsetTop + 'px');
+			var clavierOuvert = vv.height < window.innerHeight * 0.78;
+			self.panel.classList.toggle('naya-kbd', clavierOuvert);
+			if (clavierOuvert && !self.chat.root.classList.contains('naya-welcoming')) self.chat.scroll();
+		};
+		vv.addEventListener('resize', this.majClavier);
+		vv.addEventListener('scroll', this.majClavier);
 	};
 
 	Bar.prototype.minimize = function (silent) {
