@@ -203,6 +203,15 @@ class Naya_Admin {
 				<p class="description" style="max-width:640px;">
 					<?php esc_html_e( 'Naya lit automatiquement vos pages, articles et produits (titres, liens, résumés) pour répondre avec précision et proposer les bons liens. Complétez ci-dessous avec ce qui n\'est pas sur le site : tarifs, offres, FAQ, horaires…', 'naya' ); ?>
 				</p>
+				<?php if ( Naya_Catalog::available() ) : ?>
+					<p style="max-width:640px;">
+						<strong>🛒 <?php
+						/* translators: %s: nombre de produits */
+						printf( esc_html__( 'Catalogue : %s produits connus de Naya.', 'naya' ), esc_html( number_format_i18n( Naya_Catalog::count() ) ) );
+						?></strong><br />
+						<span class="description"><?php esc_html_e( 'À chaque question, Naya cherche les produits concernés et lit en direct leur prix, leur promo, leur stock et les tailles ou couleurs encore disponibles. Rien à configurer : un produit ajouté ou modifié est pris en compte immédiatement.', 'naya' ); ?></span>
+					</p>
+				<?php endif; ?>
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row"><label for="naya_knowledge"><?php esc_html_e( 'Connaissances complémentaires', 'naya' ); ?></label></th>

@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,13 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.3.0 =
+* Catalogue produits complet : Naya connaît tous les produits WooCommerce du site, plus seulement les 30 derniers. À chaque question, elle cherche les produits concernés et lit en direct leur prix, leur promotion, leur stock et les tailles ou couleurs encore disponibles
+* Recherche adaptée aux questions des visiteurs : budget (« moins de 20 000 », « entre 60 000 et 100 000 »), promotions, « le moins cher », meilleures ventes, synonymes courants (smartphone, tel, portable → téléphones), référence produit, et relances (« et en XL ? », « le moins cher ? »)
+* Naya n'invente plus de produit : si rien ne correspond, elle le dit et propose le lien de recherche de la boutique. Les produits masqués du catalogue ne sont jamais proposés
+* Vue d'ensemble de la boutique (rayons et meilleures ventes) pour les questions générales ; nombre de produits connus affiché dans les réglages
+* Compatible places de marché : le nom de la boutique du vendeur (Dokan, WCFM) est indiqué
 
 = 2.2.0 =
 * Nouvelle fenêtre de conversation : modale centrée sur un voile flouté, le site reste visible derrière le flou. Rien ne passe par-dessus (bandeau cookies, boutons flottants du thème) et la page ne défile plus en arrière-plan

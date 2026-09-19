@@ -29,7 +29,7 @@ class Naya_DeepSeek {
 		// Le prompt système est le premier message du tableau (format OpenAI).
 		array_unshift( $messages, array(
 			'role'    => 'system',
-			'content' => self::system_prompt( $settings ),
+			'content' => self::system_prompt( $settings, $messages ),
 		) );
 
 		$body = array(
@@ -73,7 +73,7 @@ class Naya_DeepSeek {
 	 * Prompt système : instructions de l'admin + connaissances du site
 	 * + règles de style + garde-fous + notification.
 	 */
-	private static function system_prompt( $settings ) {
+	private static function system_prompt( $settings, array $messages = array() ) {
 		$prompt = ! empty( $settings['system_prompt'] ) ? $settings['system_prompt'] : '';
 
 		$site_context = sprintf(
@@ -96,7 +96,10 @@ class Naya_DeepSeek {
 			. Naya_Playbook::instructions( $settings )
 			. self::style_rules( $settings )
 			. Naya_Security::prompt_guard()
-			. Naya_Notify::prompt_instructions();
+			. Naya_Notify::prompt_instructions()
+			// En dernier : c'est la seule partie qui change à chaque message, le
+			// début du prompt reste identique et profite du cache de DeepSeek.
+			. Naya_Catalog::context_for( $messages );
 	}
 
 	/**
@@ -107,7 +110,7 @@ class Naya_DeepSeek {
 
 		$rules = "\n\n<regles_de_reponse>\n"
 			. "- Sois BREF : 2 à 4 phrases maximum. Pas de listes à rallonge ni de paragraphes multiples, sauf si l'utilisateur demande explicitement des détails.\n"
-			. "- Appuie-toi UNIQUEMENT sur <connaissances_site> et <connaissances_admin>. Si l'information n'y figure pas (un prix, un délai…), ne l'invente jamais : dis-le en une phrase et propose le bon lien ou le contact direct.\n"
+			. "- Appuie-toi UNIQUEMENT sur <connaissances_site>, <connaissances_admin> et <catalogue_recherche>. Si l'information n'y figure pas (un prix, un délai…), ne l'invente jamais : dis-le en une phrase et propose le bon lien ou le contact direct.\n"
 			. "- Quand tu mentionnes une page, une offre ou un produit, donne TOUJOURS son lien réel au format markdown [texte](url), en utilisant exclusivement les URLs listées dans tes connaissances. N'invente jamais d'URL.\n"
 			. "- Ne pose qu'une seule question à la fois, jamais plusieurs.\n";
 

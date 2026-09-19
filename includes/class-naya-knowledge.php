@@ -65,23 +65,12 @@ class Naya_Knowledge {
 			}
 		}
 
-		// Produits WooCommerce, avec prix.
-		if ( class_exists( 'WooCommerce' ) ) {
-			$products = get_posts( array(
-				'post_type'      => 'product',
-				'post_status'    => 'publish',
-				'posts_per_page' => 30,
-			) );
-			if ( $products ) {
-				$lines[] = '';
-				$lines[] = 'PRODUITS / SERVICES :';
-				foreach ( $products as $p ) {
-					$product = function_exists( 'wc_get_product' ) ? wc_get_product( $p->ID ) : null;
-					$price   = $product ? wp_strip_all_tags( $product->get_price_html() ) : '';
-					$title   = $p->post_title . ( $price ? ' (' . $price . ')' : '' );
-					$lines[] = self::entry( $title, get_permalink( $p ), $p->post_excerpt ? $p->post_excerpt : $p->post_content );
-				}
-			}
+		// Boutique WooCommerce : vue d'ensemble (rayons, meilleures ventes).
+		// Les fiches précises sont cherchées à chaque question par Naya_Catalog.
+		$catalog = Naya_Catalog::overview();
+		if ( $catalog ) {
+			$lines[] = '';
+			$lines   = array_merge( $lines, $catalog );
 		}
 
 		$context = '';
