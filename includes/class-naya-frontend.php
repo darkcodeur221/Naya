@@ -85,6 +85,8 @@ class Naya_Frontend {
 			'widget_position' => 'bar', 'bar_offset' => 1,
 			'bar_tagline' => __( 'Conseillère en ligne', 'naya' ),
 			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
+			'wolof_enabled' => 0, 'wolof_greeting' => 1,
+			'wolof_suggestion' => 'Ndax am ngeen polo ?',
 		) );
 	}
 
@@ -142,6 +144,8 @@ class Naya_Frontend {
 				'startHint'       => __( 'Choisissez une question ou écrivez la vôtre', 'naya' ),
 			),
 		);
+
+		$config = Naya_Wolof::accueil( $config, $s );
 
 		/** Configuration envoyée au navigateur (accueil, suggestions, textes). */
 		$config = apply_filters( 'naya_frontend_config', $config, $s );

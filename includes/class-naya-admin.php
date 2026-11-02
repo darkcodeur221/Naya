@@ -84,6 +84,10 @@ class Naya_Admin {
 		$out['teaser_delay']    = isset( $input['teaser_delay'] ) ? max( 1, min( 120, (int) $input['teaser_delay'] ) ) : 8;
 		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
 
+		$out['wolof_enabled']    = empty( $input['wolof_enabled'] ) ? 0 : 1;
+		$out['wolof_greeting']   = empty( $input['wolof_greeting'] ) ? 0 : 1;
+		$out['wolof_suggestion'] = isset( $input['wolof_suggestion'] ) ? sanitize_text_field( $input['wolof_suggestion'] ) : '';
+
 		$out['notify_enabled'] = empty( $input['notify_enabled'] ) ? 0 : 1;
 
 		// Une ou plusieurs adresses, séparées par des virgules.
@@ -129,6 +133,8 @@ class Naya_Admin {
 			'bar_tagline' => __( 'Conseillère en ligne', 'naya' ),
 			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
 			'sales_style' => 'balanced',
+			'wolof_enabled' => 0, 'wolof_greeting' => 1,
+			'wolof_suggestion' => 'Ndax am ngeen polo ?',
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -224,6 +230,41 @@ class Naya_Admin {
 						<td>
 							<input type="text" id="naya_whatsapp" name="naya_settings[whatsapp]" value="<?php echo esc_attr( $s['whatsapp'] ); ?>" class="regular-text" placeholder="221778002341" />
 							<p class="description"><?php esc_html_e( 'Format international sans + ni espaces. Naya redirige les prospects sérieux vers ce numéro (lien wa.me). Laisser vide pour désactiver.', 'naya' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>🇸🇳 <?php esc_html_e( 'Wolof et franwolof', 'naya' ); ?></h2>
+				<p class="description" style="max-width:640px;">
+					<?php esc_html_e( 'Une fois cochée, Naya répond dans la langue du visiteur : français, wolof, ou le mélange des deux tel qu\'on l\'écrit à Dakar. Elle garde la langue tout au long de la conversation, même quand le client tape deux mots. Désactivé par défaut : seuls les sites qui cochent la case sont concernés.', 'naya' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Parler wolof', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[wolof_enabled]" value="1" <?php checked( $s['wolof_enabled'], 1 ); ?> />
+								<?php esc_html_e( 'Répondre en wolof et en franwolof quand le visiteur écrit dans ces langues', 'naya' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'La répartition des langues apparaît ensuite dans le tableau de bord (menu Naya → Statistiques).', 'naya' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Accueil bilingue', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[wolof_greeting]" value="1" <?php checked( $s['wolof_greeting'], 1 ); ?> />
+								<?php esc_html_e( 'Saluer en wolof à l\'ouverture et proposer une question en wolof', 'naya' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Sans cette invitation, les visiteurs ne sauront pas qu\'ils peuvent écrire en wolof — et continueront en français.', 'naya' ); ?>
+							</p>
+							<p style="margin-top:10px;">
+								<label for="naya_wolof_sugg"><?php esc_html_e( 'Question proposée en wolof', 'naya' ); ?></label><br />
+								<input type="text" id="naya_wolof_sugg" class="regular-text" name="naya_settings[wolof_suggestion]" value="<?php echo esc_attr( $s['wolof_suggestion'] ); ?>" />
+							</p>
 						</td>
 					</tr>
 				</table>

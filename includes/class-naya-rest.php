@@ -212,6 +212,8 @@ class Naya_Rest {
 		 * Message reçu, avant l'appel au modèle. Une extension peut s'en
 		 * servir pour analyser la demande (langue, intention…).
 		 */
+		Naya_Wolof::noter_langue( $message );
+
 		do_action( 'naya_user_message', $message, $conversation_id, $context );
 
 		$reply = Naya_DeepSeek::chat( $context );

@@ -101,6 +101,9 @@ class Naya_DeepSeek {
 			// début du prompt reste identique et profite du cache de DeepSeek.
 			. Naya_Catalog::context_for( $messages );
 
+		// Langue du visiteur : français, wolof ou le mélange des deux.
+		$prompt = Naya_Wolof::injecter( $prompt, $settings, $messages );
+
 		/**
 		 * Prompt système complet. Point d'extension principal : c'est ici que
 		 * l'add-on wolof greffe ses consignes de langue et ses exemples.

@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,14 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.4.0 =
+* Naya parle wolof et franwolof. Une case à cocher dans les réglages (désactivée par défaut) et elle répond dans la langue du visiteur : français, wolof, ou le mélange des deux tel qu'on l'écrit à Dakar
+* La langue est reconnue sans modèle ni appel réseau, et tenue tout au long de la conversation : un client qui demande « ñaata la polo bi ? » puis tape « du 42 » reste servi en wolof
+* Wolof de Dakar, pas de livre : noms de produits, tailles et prix restent en français, prix en chiffres jamais convertis en dërëm, et aucune remise promise — le marchandage est renvoyé vers WhatsApp
+* Accueil bilingue optionnel, sans lequel les visiteurs ne savent pas qu'ils peuvent écrire en wolof
+* Sur un simple mot-clé (« polo », « Bombers »), Naya montre 2 ou 3 produits réels puis pose une question pour engager la conversation
+* Nouveau bloc « Langues des visiteurs » dans le tableau de bord
 
 = 2.3.1 =
 * Correctif de mesure : le compteur « ouvertures du widget » restait à zéro avec la barre en haut de page, alors que les conversations, elles, montaient. Le taux d'engagement du tableau de bord était donc faux

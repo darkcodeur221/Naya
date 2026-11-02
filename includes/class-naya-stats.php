@@ -28,7 +28,7 @@ class Naya_Stats {
 	 * l'add-on wolof enregistre ainsi la langue de chaque message.
 	 */
 	public static function events() {
-		$events = apply_filters( 'naya_events', self::EVENTS );
+		$events = apply_filters( 'naya_events', array_merge( self::EVENTS, Naya_Wolof::EVENEMENTS ) );
 		return array_values( array_unique( array_filter( array_map( 'strval', (array) $events ) ) ) );
 	}
 
@@ -354,6 +354,42 @@ class Naya_Stats {
 					<?php endif; ?>
 				</div>
 			</div>
+
+			<?php
+			// Expérience wolof : la répartition des langues est le chiffre
+			// qui dit si elle mérite d'être poursuivie.
+			if ( Naya_Wolof::active() ) :
+				$langues = Naya_Wolof::comptes( self::PERIOD_DAYS );
+				$base    = max( 1, $langues['total'] );
+				?>
+				<div class="naya-panel" style="margin-bottom: 24px;">
+					<h2>🇸🇳 <?php esc_html_e( 'Langues des visiteurs', 'naya' ); ?></h2>
+					<?php if ( $langues['total'] ) : ?>
+						<ul class="naya-list">
+							<?php
+							foreach ( array(
+								'lang_wo'  => __( 'Wolof', 'naya' ),
+								'lang_mix' => __( 'Franwolof (mélange)', 'naya' ),
+								'lang_fr'  => __( 'Français', 'naya' ),
+							) as $cle => $libelle ) :
+								?>
+								<li>
+									<strong><?php echo esc_html( $libelle ); ?></strong>
+									— <?php echo esc_html( round( 100 * $langues[ $cle ] / $base ) ); ?> %
+									<span class="meta">
+										<?php
+										/* translators: %d: nombre de messages */
+										printf( esc_html( _n( '%d message', '%d messages', $langues[ $cle ], 'naya' ) ), (int) $langues[ $cle ] );
+										?>
+									</span>
+								</li>
+							<?php endforeach; ?>
+						</ul>
+					<?php else : ?>
+						<p class="naya-empty"><?php esc_html_e( 'Aucun message mesuré pour l\'instant.', 'naya' ); ?></p>
+					<?php endif; ?>
+				</div>
+			<?php endif; ?>
 
 			<div class="naya-panel" style="margin-bottom: 24px;">
 				<h2>⭐ <?php esc_html_e( 'Derniers avis des visiteurs', 'naya' ); ?></h2>

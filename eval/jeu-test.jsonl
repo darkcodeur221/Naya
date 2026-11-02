@@ -1,0 +1,36 @@
+{"texte": "Salamaalekum, ndax am ngeen polo ?", "langue": "wo", "note": "salutation + recherche produit"}
+{"texte": "nanga def ?", "langue": "wo", "note": "salutation seule"}
+{"texte": "ñaata la pull bi ?", "langue": "wo", "note": "demande de prix, accents"}
+{"texte": "niata la pull bi", "langue": "wo", "note": "meme phrase sans accents (clavier courant)"}
+{"texte": "bëgg naa jënd Air Jordan", "langue": "wo", "note": "intention d'achat"}
+{"texte": "begg na jend air jordan", "langue": "wo", "note": "sans accents"}
+{"texte": "am nga ci 42 ?", "langue": "wo", "note": "pointure, mots courts"}
+{"texte": "wàññil ma ko tuuti", "langue": "wo", "note": "marchandage"}
+{"texte": "dinañu ko yóbbu Thiès ?", "langue": "wo", "note": "livraison hors Dakar"}
+{"texte": "jërëjëf, ba beneen yoon", "langue": "wo", "note": "remerciement et cloture"}
+{"texte": "waaw, def ko", "langue": "wo", "note": "confirmation tres courte"}
+{"texte": "deedeet, amul", "langue": "wo", "note": "negation"}
+{"texte": "yaw am nga Air Jordan 4 ci 42 ?", "langue": "wo", "note": "wolof avec nom de produit francais"}
+{"texte": "bonjour, bëgg naa un pull noir", "langue": "mix", "note": "franwolof typique"}
+{"texte": "salut, ñaata la livraison bi ?", "langue": "mix", "note": "melange courant"}
+{"texte": "je veux un polo, am nga ci blanc ?", "langue": "mix", "note": "phrase francaise + wolof"}
+{"texte": "merci beaucoup jërëjëf", "langue": "mix", "note": "un seul mot wolof"}
+{"texte": "c'est dispo waaw ou deedeet ?", "langue": "mix", "note": "deux temoins wolof"}
+{"texte": "polo", "langue": "fr", "note": "mot-cle seul, vraie requete du site"}
+{"texte": "Air Jordan 4", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "nike tech", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Dior b23", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Salopette homme", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Pull noir", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Bombers", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Deco", "langue": "fr", "note": "mot-cle seul"}
+{"texte": "Avez vous le bracelet qui s'illumine", "langue": "fr", "note": "question francaise reelle"}
+{"texte": "C'est pour 9 ans", "langue": "fr", "note": "suite de conversation en francais"}
+{"texte": "salut vous avait quel taille", "langue": "fr", "note": "francais fautif, ne doit pas passer pour du wolof"}
+{"texte": "Comment vous contacter ?", "langue": "fr", "note": "question francaise reelle"}
+{"texte": "Je veux le fond de teint la girl matt teinte caramel", "langue": "fr", "note": "la, ma, de : pieges de mots courts"}
+{"texte": "ma commande n'est pas arrivée", "langue": "fr", "note": "ma, na : pieges"}
+{"texte": "la livraison a Dakar c'est combien", "langue": "fr", "note": "la, a : pieges"}
+{"texte": "sa taille est trop petite", "langue": "fr", "note": "sa : piege"}
+{"texte": "du 42 si possible", "langue": "fr", "note": "du : piege"}
+{"texte": "bonjour j'ai besoin montre plus chaine", "langue": "fr", "note": "lead reel du site"}
