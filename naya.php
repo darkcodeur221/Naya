@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/darkcodeur221/Naya
  * Update URI:        https://github.com/darkcodeur221/Naya
  * Description:       Chatbot IA propulsé par DeepSeek — par Deejitcorp. Widget flottant élégant, page de chat dédiée et mémoire de conversation persistante.
- * Version:           2.4.0
+ * Version:           2.5.0
  * Author:            Deejitcorp
  * Author URI:        https://github.com/darkcodeur221
  * License:           GPL-2.0-or-later
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NAYA_VERSION', '2.4.0' );
+define( 'NAYA_VERSION', '2.5.0' );
 define( 'NAYA_DB_VERSION', '2.0' );
 define( 'NAYA_PLUGIN_FILE', __FILE__ );
 define( 'NAYA_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -32,6 +32,7 @@ require_once NAYA_PLUGIN_DIR . 'includes/class-naya-knowledge.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-catalog.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-langue.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-wolof.php';
+require_once NAYA_PLUGIN_DIR . 'includes/class-naya-voix.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-playbook.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-stats.php';
 require_once NAYA_PLUGIN_DIR . 'includes/class-naya-updater.php';

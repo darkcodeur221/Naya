@@ -29,6 +29,11 @@ class Naya_Rest {
 					'required' => false,
 					'type'     => 'integer',
 				),
+				'voice'           => array(
+					'required' => false,
+					'type'     => 'boolean',
+					'default'  => false,
+				),
 			),
 		) );
 
@@ -216,7 +221,9 @@ class Naya_Rest {
 
 		do_action( 'naya_user_message', $message, $conversation_id, $context );
 
-		$reply = Naya_DeepSeek::chat( $context );
+		$reply = Naya_DeepSeek::chat( $context, array(
+			'voice' => (bool) $request->get_param( 'voice' ),
+		) );
 
 		if ( is_wp_error( $reply ) ) {
 			$status = $reply->get_error_data();

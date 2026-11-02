@@ -86,7 +86,10 @@ class Naya_Frontend {
 			'bar_tagline' => __( 'Conseillère en ligne', 'naya' ),
 			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
 			'wolof_enabled' => 0, 'wolof_greeting' => 1,
+			'voice_enabled' => 1, 'voice_lang' => 'fr-FR',
+			'voice_rate' => 1.05, 'voice_hands_free' => 1,
 			'wolof_suggestion' => 'Ndax am ngeen polo ?',
+			'footer_note' => '',
 		) );
 	}
 
@@ -142,7 +145,17 @@ class Naya_Frontend {
 				'endSkip'         => __( 'Fermer sans noter', 'naya' ),
 				'endDone'         => __( 'À très vite ! 👋', 'naya' ),
 				'startHint'       => __( 'Choisissez une question ou écrivez la vôtre', 'naya' ),
+				'voiceStart'      => __( 'Passer au mode vocal', 'naya' ),
+				'voiceStop'       => __( 'Revenir à l\'écrit', 'naya' ),
+				'voiceListening'  => __( 'Je vous écoute…', 'naya' ),
+				'voiceThinking'   => __( 'Un instant…', 'naya' ),
+				'voiceSpeaking'   => __( 'Naya répond', 'naya' ),
+				'voiceTapToStop'  => __( 'Touchez pour couper', 'naya' ),
+				'voiceDenied'     => __( 'Le micro est bloqué. Autorisez-le dans votre navigateur pour parler à Naya.', 'naya' ),
+				'voiceNoSupport'  => __( 'Votre navigateur ne gère pas la reconnaissance vocale. Essayez Chrome.', 'naya' ),
+				'voiceNoSound'    => __( 'Je n\'ai rien entendu. Réessayez ?', 'naya' ),
 			),
+			'voice'    => Naya_Voix::config( $s ),
 		);
 
 		$config = Naya_Wolof::accueil( $config, $s );
@@ -318,11 +331,12 @@ class Naya_Frontend {
 				<form class="naya-input-bar">
 					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
+					<?php self::voice_button(); ?>
 					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
 					</button>
 				</form>
-				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
+				<?php self::footer(); ?>
 			</div>
 		</div>
 		<?php
@@ -333,6 +347,49 @@ class Naya_Frontend {
 	 * la simple réduction : ici le visiteur dit « j'ai terminé », ce qui est
 	 * le meilleur moment pour lui demander son avis.
 	 */
+	/**
+	 * Pied de la conversation : la signature, et le message que le site
+	 * souhaite laisser au visiteur au moment où il s'apprête à commander.
+	 */
+	private static function footer() {
+		$note = trim( (string) self::settings()['footer_note'] );
+		?>
+		<div class="naya-footer-brand">
+			<?php if ( '' !== $note ) : ?>
+				<span class="naya-footer-note"><?php echo esc_html( $note ); ?></span>
+			<?php endif; ?>
+			<span class="naya-footer-by">Propulsé par <strong>Deejitcorp</strong></span>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Bouton du mode vocal, posé contre le bouton d'envoi.
+	 *
+	 * C'est l'endroit où le pouce est déjà : le visiteur qui hésite à écrire
+	 * voit l'alternative sans la chercher. Le libellé « Passer au mode vocal »
+	 * se déplie tout seul une fois, puis le bouton se referme en pastille.
+	 *
+	 * Masqué par défaut : le script l'affiche seulement si le navigateur sait
+	 * écouter et parler.
+	 */
+	private static function voice_button() {
+		if ( ! Naya_Voix::active() ) {
+			return;
+		}
+		?>
+		<button type="button" class="naya-voice-btn naya-hidden"
+			aria-label="<?php esc_attr_e( 'Passer au mode vocal', 'naya' ); ?>" aria-pressed="false">
+			<span class="naya-voice-ico" aria-hidden="true">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+					<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+				</svg>
+			</span>
+			<span class="naya-voice-txt"><?php esc_html_e( 'Passer au mode vocal', 'naya' ); ?></span>
+		</button>
+		<?php
+	}
+
 	private static function end_button() {
 		?>
 		<button type="button" class="naya-end-btn naya-hidden"
@@ -413,11 +470,12 @@ class Naya_Frontend {
 				<form class="naya-input-bar">
 					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
+					<?php self::voice_button(); ?>
 					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
 					</button>
 				</form>
-				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
+				<?php self::footer(); ?>
 			</div>
 
 			<button type="button" id="naya-tab" class="naya-hidden" aria-label="<?php esc_attr_e( 'Rouvrir la barre de conversation', 'naya' ); ?>">
@@ -455,11 +513,12 @@ class Naya_Frontend {
 				<form class="naya-input-bar">
 					<input type="text" name="website" class="naya-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 					<textarea rows="1" placeholder="<?php esc_attr_e( 'Écrivez votre message…', 'naya' ); ?>"></textarea>
+					<?php self::voice_button(); ?>
 					<button type="submit" aria-label="<?php esc_attr_e( 'Envoyer', 'naya' ); ?>">
 						<svg viewBox="0 0 24 24" width="20" height="20" fill="none"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
 					</button>
 				</form>
-				<div class="naya-footer-brand">Propulsé par <strong>Deejitcorp</strong></div>
+				<?php self::footer(); ?>
 			</main>
 		</div>
 		<?php

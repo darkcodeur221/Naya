@@ -19,7 +19,7 @@
 /* Sentinelle : le JavaScript lit cette variable pour vérifier que cette
    feuille est bien chargée. Une extension de cache servant un fichier périmé
    ne la contiendrait pas, et l'avertissement partirait en console. */
-#naya-widget, #naya-page { --naya-css: "2.4.0"; }
+#naya-widget, #naya-page { --naya-css: "2.5.0"; }
 
 #naya-widget, #naya-page { font-family: var(--naya-font); }
 #naya-widget *, #naya-page * { box-sizing: border-box; }
@@ -1107,6 +1107,23 @@ html.naya-modal-open body { overflow: hidden !important; }
 	background: var(--naya-bg);
 }
 
+
+/* Pied de conversation : la signature, et le mot que la boutique laisse
+   au visiteur au moment de commander. */
+.naya-footer-brand {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	line-height: 1.35;
+}
+.naya-footer-note {
+	color: var(--naya-c1);
+	font-weight: 600;
+	text-align: center;
+	padding: 0 14px;
+}
+
 /* --------------------------------------------------------------------------
    Page dédiée
    -------------------------------------------------------------------------- */
@@ -1508,4 +1525,159 @@ html.naya-modal-open body { overflow: hidden !important; }
 	#naya-page.naya-sidebar-open .naya-sidebar { transform: translateX(0); }
 	.naya-header-page .naya-toggle-sidebar { display: flex; }
 	#naya-page .naya-msg { max-width: 85%; }
+}
+
+/* --------------------------------------------------------------------------
+   Mode vocal
+   Le bouton vit contre le bouton d'envoi : c'est là que le pouce se trouve
+   déjà. Il se déplie une fois pour dire à quoi il sert, puis redevient une
+   pastille pour ne pas encombrer la zone de saisie.
+   -------------------------------------------------------------------------- */
+.naya-voice-btn.naya-hidden { display: none !important; }
+
+#naya-widget .naya-voice-btn,
+#naya-page .naya-voice-btn {
+	position: static !important;
+	display: inline-flex !important;
+	align-items: center;
+	gap: 0;
+	width: auto !important;
+	height: 42px !important;
+	padding: 0 !important;
+	border: none !important;
+	border-radius: 999px !important;
+	background: var(--naya-grad) !important;
+	color: #fff !important;
+	font-size: 13.5px !important;
+	font-weight: 700;
+	cursor: pointer;
+	flex-shrink: 0;
+	white-space: nowrap;
+	box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--naya-c1) 60%, transparent) !important;
+	transition: transform 0.18s, filter 0.18s;
+}
+.naya-voice-ico {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 42px;
+	height: 42px;
+	flex-shrink: 0;
+}
+/* C'est le libellé qui s'ouvre et se referme, pas le bouton : l'icône
+   reste ainsi toujours à sa place, jamais rognée. */
+.naya-voice-txt {
+	display: inline-block;
+	max-width: 0;
+	padding-right: 0;
+	overflow: hidden;
+	opacity: 0;
+	transition: max-width 0.45s cubic-bezier(0.3, 1.1, 0.4, 1), padding-right 0.45s, opacity 0.25s;
+}
+#naya-widget .naya-voice-btn:hover,
+#naya-page .naya-voice-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+#naya-widget .naya-voice-btn:active,
+#naya-page .naya-voice-btn:active { transform: scale(0.95); }
+
+/* Le libellé se déplie une fois, pour dire à quoi sert la pastille. */
+.naya-voice-invite .naya-voice-txt {
+	max-width: 220px;
+	padding-right: 16px;
+	opacity: 1;
+	transition-delay: 0.1s;
+}
+
+/* Au repos, une respiration discrète attire l'œil sans clignoter. */
+.naya-voice-btn:not(.naya-voice-on) .naya-voice-ico { animation: naya-voice-breathe 3.2s ease-in-out infinite; }
+@keyframes naya-voice-breathe {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.12); }
+}
+
+/* Mode vocal allumé : vert « en ligne », avec une onde qui s'échappe. */
+#naya-widget .naya-voice-btn.naya-voice-on,
+#naya-page .naya-voice-btn.naya-voice-on {
+	position: relative !important;
+	background: linear-gradient(180deg, #16a34a, #15803d) !important;
+	box-shadow: 0 4px 16px rgba(22, 163, 74, 0.45) !important;
+}
+.naya-voice-btn.naya-voice-on::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	border: 2px solid rgba(22, 163, 74, 0.5);
+	animation: naya-voice-ping 1.8s ease-out infinite;
+}
+.naya-voice-on .naya-voice-ico { animation: none; }
+@keyframes naya-voice-ping {
+	from { opacity: 0.85; transform: scale(1); }
+	to { opacity: 0; transform: scale(1.45); }
+}
+
+/* Bandeau d'état, en bas du fil. */
+.naya-voice-state {
+	align-self: center;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 4px;
+	padding: 9px 16px;
+	border-radius: 999px;
+	background: var(--naya-bg);
+	border: 1px solid rgba(20, 10, 50, 0.08);
+	box-shadow: 0 4px 14px rgba(20, 10, 50, 0.07);
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--naya-text);
+	animation: naya-msg-in 0.25s ease-out;
+}
+.naya-voice-state.naya-voice-parle { cursor: pointer; }
+
+/* Trois barres qui dansent : l'équivalent visuel du micro ouvert. */
+.naya-voice-orb { display: flex; align-items: center; gap: 3px; height: 16px; }
+.naya-voice-orb i {
+	display: block;
+	width: 3px;
+	height: 6px;
+	border-radius: 2px;
+	background: var(--naya-c1);
+}
+.naya-voice-ecoute .naya-voice-orb i { background: #16a34a; animation: naya-voice-wave 0.9s ease-in-out infinite; }
+.naya-voice-ecoute .naya-voice-orb i:nth-child(2) { animation-delay: 0.15s; }
+.naya-voice-ecoute .naya-voice-orb i:nth-child(3) { animation-delay: 0.3s; }
+.naya-voice-parle .naya-voice-orb i { animation: naya-voice-wave 0.7s ease-in-out infinite; }
+.naya-voice-parle .naya-voice-orb i:nth-child(2) { animation-delay: 0.1s; }
+.naya-voice-parle .naya-voice-orb i:nth-child(3) { animation-delay: 0.2s; }
+.naya-voice-reflexion .naya-voice-orb i { animation: naya-bounce 1.2s infinite; }
+.naya-voice-reflexion .naya-voice-orb i:nth-child(2) { animation-delay: 0.15s; }
+.naya-voice-reflexion .naya-voice-orb i:nth-child(3) { animation-delay: 0.3s; }
+.naya-voice-silence .naya-voice-orb i { background: var(--naya-muted); }
+
+@keyframes naya-voice-wave {
+	0%, 100% { height: 6px; }
+	50% { height: 16px; }
+}
+
+/* Ce que le visiteur dit, affiché pendant qu'il parle. */
+.naya-voice-live {
+	opacity: 0.6;
+	font-style: italic;
+	animation: none !important;
+}
+.naya-voice-live.naya-voice-final { opacity: 1; font-style: normal; }
+
+/* Sur mobile, la pastille suit la taille du bouton d'envoi. */
+@media (max-width: 600px) {
+	#naya-widget .naya-voice-btn,
+	#naya-page .naya-voice-btn { height: 46px !important; }
+	.naya-voice-ico { width: 46px; height: 46px; }
+	.naya-voice-invite .naya-voice-txt { max-width: 190px; }
+	.naya-voice-state { padding: 11px 18px; font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.naya-voice-btn.naya-voice-on::after,
+	.naya-voice-btn .naya-voice-ico,
+	.naya-voice-orb i { animation: none !important; }
 }

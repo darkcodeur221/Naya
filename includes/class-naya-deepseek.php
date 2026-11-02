@@ -18,7 +18,7 @@ class Naya_DeepSeek {
 	 * @param array $messages Historique au format [['role' => ..., 'content' => ...], ...]
 	 * @return string|WP_Error
 	 */
-	public static function chat( array $messages ) {
+	public static function chat( array $messages, array $options = array() ) {
 		$settings = get_option( 'naya_settings', array() );
 		$api_key  = isset( $settings['api_key'] ) ? trim( $settings['api_key'] ) : '';
 
@@ -29,12 +29,19 @@ class Naya_DeepSeek {
 		// Le prompt système est le premier message du tableau (format OpenAI).
 		array_unshift( $messages, array(
 			'role'    => 'system',
-			'content' => self::system_prompt( $settings, $messages ),
+			'content' => self::system_prompt( $settings, $messages, $options ),
 		) );
+
+		// En vocal, une réponse courte n'est pas qu'une question de style :
+		// moins de mots à écrire, c'est une réponse qui arrive plus vite.
+		$max_tokens = ! empty( $settings['max_tokens'] ) ? (int) $settings['max_tokens'] : 1024;
+		if ( ! empty( $options['voice'] ) ) {
+			$max_tokens = min( $max_tokens, Naya_Voix::MAX_TOKENS );
+		}
 
 		$body = array(
 			'model'      => ! empty( $settings['model'] ) ? $settings['model'] : 'deepseek-chat',
-			'max_tokens' => ! empty( $settings['max_tokens'] ) ? (int) $settings['max_tokens'] : 1024,
+			'max_tokens' => $max_tokens,
 			'messages'   => $messages,
 			'stream'     => false,
 		);
@@ -73,7 +80,7 @@ class Naya_DeepSeek {
 	 * Prompt système : instructions de l'admin + connaissances du site
 	 * + règles de style + garde-fous + notification.
 	 */
-	private static function system_prompt( $settings, array $messages = array() ) {
+	private static function system_prompt( $settings, array $messages = array(), array $options = array() ) {
 		$prompt = ! empty( $settings['system_prompt'] ) ? $settings['system_prompt'] : '';
 
 		$site_context = sprintf(
@@ -103,6 +110,11 @@ class Naya_DeepSeek {
 
 		// Langue du visiteur : français, wolof ou le mélange des deux.
 		$prompt = Naya_Wolof::injecter( $prompt, $settings, $messages );
+
+		// Question posée à la voix : la réponse sera lue à voix haute.
+		if ( ! empty( $options['voice'] ) ) {
+			$prompt .= Naya_Voix::instructions( $settings );
+		}
 
 		/**
 		 * Prompt système complet. Point d'extension principal : c'est ici que

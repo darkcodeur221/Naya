@@ -4,7 +4,7 @@ Tags: chatbot, ia, ai, deepseek, assistant, support
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.5.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -26,6 +26,16 @@ Naya conseille vos visiteurs et répond à leurs demandes directement sur votre 
 3. Renseignez votre clé API DeepSeek dans Réglages → Naya
 
 == Changelog ==
+
+= 2.5.0 =
+* Mode vocal : un bouton micro dans la conversation, le visiteur parle et Naya lui repond a voix haute
+* Concu pour la rapidite : en vocal, Naya repond en deux ou trois phrases (plafonnees a 220 jetons), car une reponse courte arrive bien plus vite qu'un paragraphe
+* Aucun son ne transite par le serveur : l'ecoute et la voix sont celles du navigateur, donc sans latence reseau
+* La reponse est lue phrase par phrase, debarrassee des liens, des asterisques et des emojis qui se lisaient « crochet h t t p p deux points »
+* Mains libres : le micro se rouvre des que Naya a fini de parler, comme au telephone. Un appui sur le bandeau la coupe aussitot
+* Le bouton se trouve contre le bouton d'envoi : il se deplie une fois pour annoncer « Passer au mode vocal », puis redevient une pastille
+* Reglages : activation, langue d'ecoute, vitesse de la voix et mains libres
+* Nouveau champ « Message sous la conversation » : une phrase affichee a cote de « Propulse par Deejitcorp », au moment ou le visiteur s'apprete a commander
 
 = 2.4.0 =
 * Naya parle wolof et franwolof. Une case à cocher dans les réglages (désactivée par défaut) et elle répond dans la langue du visiteur : français, wolof, ou le mélange des deux tel qu'on l'écrit à Dakar

@@ -108,13 +108,14 @@
 				});
 			});
 		},
-		chat: function (message, conversationId, honeypot) {
+		chat: function (message, conversationId, honeypot, voice) {
 			return this.request(NAYA.restUrl + '/chat', {
 				method: 'POST',
 				body: JSON.stringify({
 					message: message,
 					conversation_id: conversationId || 0,
-					website: honeypot || ''
+					website: honeypot || '',
+					voice: !!voice
 				})
 			});
 		},
@@ -634,12 +635,13 @@
 
 		var hp = this.form.querySelector('.naya-hp');
 
-		API.chat(text, this.conversationId, honeypot || (hp ? hp.value : ''))
+		API.chat(text, this.conversationId, honeypot || (hp ? hp.value : ''), this.vocal)
 			.then(function (data) {
 				self.typing(false);
 				self.conversationId = data.conversation_id;
 				sessionStorage.setItem('naya_conv', String(data.conversation_id));
 				self.append('assistant', data.reply);
+				if (self.onAssistant) self.onAssistant(data.reply);
 				self.armRatingInvite();
 				self.toggleEndButton(true);
 				if (self.onReply) self.onReply();
@@ -648,6 +650,7 @@
 			.catch(function (err) {
 				self.typing(false);
 				self.append('error', err.message || NAYA.i18n.error);
+				if (self.onAssistant) self.onAssistant('');
 			})
 			.finally(function () {
 				self.busy = false;
@@ -779,6 +782,339 @@
 		// l'interface du chat, pas d'un clic extérieur.
 		return !document.documentElement.contains(e.target);
 	}
+
+
+	/* -------------------------- Mode vocal ---------------------------- */
+
+	/**
+	 * Le visiteur parle, Naya répond à voix haute.
+	 *
+	 * Tout se passe dans le navigateur : la reconnaissance vocale et la voix
+	 * de synthèse sont natives. Aucun son n'est envoyé à notre serveur, donc
+	 * aucune latence réseau de ce côté — le seul temps d'attente est celui du
+	 * modèle, qu'on raccourcit en exigeant une réponse brève.
+	 *
+	 * La fluidité tient à trois détails :
+	 *  - la réponse est découpée en phrases et lue au fur et à mesure ;
+	 *  - les liens et la mise en forme sont retirés avant lecture, sinon la
+	 *    synthèse épelle « crochet h t t p p deux points » ;
+	 *  - dès que Naya a fini de parler, le micro se rouvre tout seul : on
+	 *    enchaîne comme au téléphone, sans toucher l'écran.
+	 */
+	function Voix(chat, racine) {
+		var Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+		this.boutons = racine.querySelectorAll('.naya-voice-btn');
+
+		// Navigateur incapable d'écouter ou de parler : le bouton reste caché.
+		if (!Reco || !window.speechSynthesis || !this.boutons.length) return;
+
+		this.chat = chat;
+		this.racine = racine;
+		this.cfg = NAYA.voice || {};
+		this.actif = false;
+		this.ecoute = false;
+		this.parle = false;
+		this.envoye = false;
+		this.phrases = [];
+
+		this.reco = new Reco();
+		this.reco.lang = this.cfg.lang || 'fr-FR';
+		this.reco.interimResults = true;
+		this.reco.continuous = false;
+		this.reco.maxAlternatives = 1;
+
+		this.bind();
+		for (var i = 0; i < this.boutons.length; i++) {
+			this.boutons[i].classList.remove('naya-hidden');
+		}
+		this.inviter();
+	}
+
+	/**
+	 * Le bouton se déplie une fois pour annoncer « Passer au mode vocal »,
+	 * puis se referme en pastille. Une seule fois par visite : une invitation
+	 * répétée devient une nuisance.
+	 */
+	Voix.prototype.inviter = function () {
+		var self = this;
+		try {
+			if (sessionStorage.getItem('naya_voice_vu')) return;
+			sessionStorage.setItem('naya_voice_vu', '1');
+		} catch (e) {}
+
+		setTimeout(function () {
+			if (self.actif) return;
+			self.classeBoutons('naya-voice-invite', true);
+			setTimeout(function () { self.classeBoutons('naya-voice-invite', false); }, 3600);
+		}, 1200);
+	};
+
+	Voix.prototype.classeBoutons = function (classe, actif) {
+		for (var i = 0; i < this.boutons.length; i++) {
+			this.boutons[i].classList.toggle(classe, !!actif);
+		}
+	};
+
+	Voix.prototype.bind = function () {
+		var self = this;
+
+		for (var i = 0; i < this.boutons.length; i++) {
+			this.boutons[i].addEventListener('click', function () { self.basculer(); });
+		}
+
+		this.reco.addEventListener('result', function (e) {
+			var texte = '';
+			var fini = false;
+			for (var i = e.resultIndex; i < e.results.length; i++) {
+				texte += e.results[i][0].transcript;
+				if (e.results[i].isFinal) fini = true;
+			}
+			self.transcrire(texte, fini);
+			if (fini) self.envoyer(texte);
+		});
+
+		// Fin d'écoute : soit on a envoyé, soit le visiteur n'a rien dit.
+		this.reco.addEventListener('end', function () {
+			self.ecoute = false;
+			if (self.actif && !self.parle && !self.envoye) {
+				self.etat('silence');
+			}
+		});
+
+		this.reco.addEventListener('error', function (e) {
+			self.ecoute = false;
+			if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+				self.stop();
+				self.chat.append('error', NAYA.i18n.voiceDenied);
+			} else if (e.error === 'no-speech' && self.actif) {
+				self.etat('silence');
+			}
+		});
+
+		// Réponse reçue : on la lit, puis on redonne la parole au visiteur.
+		this.chat.onAssistant = function (texte) {
+			if (!self.actif) return;
+			if (!texte) { self.relancer(); return; }
+			self.lire(texte);
+		};
+
+		// Quitter la page en pleine phrase laisserait la voix tourner.
+		window.addEventListener('pagehide', function () { self.stop(); });
+	};
+
+	Voix.prototype.basculer = function () {
+		this.actif ? this.stop() : this.demarrer();
+	};
+
+	Voix.prototype.demarrer = function () {
+		this.actif = true;
+		this.majBoutons(true);
+		this.ecouter();
+	};
+
+	Voix.prototype.stop = function () {
+		this.actif = false;
+		this.chat.vocal = false;
+		this.taire();
+		try { this.reco.abort(); } catch (e) {}
+		this.ecoute = false;
+		this.majBoutons(false);
+		this.transcrire('', false);
+		this.etat(null);
+	};
+
+	Voix.prototype.majBoutons = function (actif) {
+		for (var i = 0; i < this.boutons.length; i++) {
+			var b = this.boutons[i];
+			b.classList.toggle('naya-voice-on', !!actif);
+			// Une invitation en cours n'a plus lieu d'être une fois allumé.
+			b.classList.remove('naya-voice-invite');
+			b.setAttribute('aria-pressed', actif ? 'true' : 'false');
+			b.setAttribute('aria-label', actif ? NAYA.i18n.voiceStop : NAYA.i18n.voiceStart);
+			var txt = b.querySelector('.naya-voice-txt');
+			if (txt) txt.textContent = actif ? NAYA.i18n.voiceStop : NAYA.i18n.voiceStart;
+		}
+	};
+
+	Voix.prototype.ecouter = function () {
+		if (!this.actif || this.ecoute || this.parle) return;
+		this.envoye = false;
+		try {
+			this.reco.start();
+			this.ecoute = true;
+			this.etat('ecoute');
+		} catch (e) {
+			// start() sur une reconnaissance déjà lancée : sans gravité.
+		}
+	};
+
+	/** Après une réponse, on rend la parole au visiteur sans qu'il clique. */
+	Voix.prototype.relancer = function () {
+		var self = this;
+		if (!this.actif) return;
+		if (!this.cfg.hands) { this.etat(null); return; }
+		setTimeout(function () { self.ecouter(); }, 250);
+	};
+
+	Voix.prototype.envoyer = function (texte) {
+		texte = (texte || '').trim();
+		if (!texte) return;
+		this.envoye = true;
+		this.transcrire('', false);
+		this.etat('reflexion');
+		this.chat.vocal = true;
+		this.chat.sendText(texte);
+	};
+
+	/* ------------------------------ Voix ------------------------------ */
+
+	/**
+	 * Lecture à voix haute, phrase par phrase : la première est prononcée
+	 * tout de suite, les suivantes attendent leur tour.
+	 */
+	Voix.prototype.lire = function (texte) {
+		var self = this;
+		var propre = this.pourOreille(texte);
+		if (!propre) { this.relancer(); return; }
+
+		this.taire();
+		this.parle = true;
+		this.etat('parle');
+
+		this.phrases = this.decouper(propre);
+		var suivante = function () {
+			if (!self.actif || !self.phrases.length) {
+				self.parle = false;
+				self.relancer();
+				return;
+			}
+			var u = new SpeechSynthesisUtterance(self.phrases.shift());
+			u.lang = self.cfg.lang || 'fr-FR';
+			u.rate = self.cfg.rate || 1.05;
+			var voix = self.meilleureVoix();
+			if (voix) u.voice = voix;
+			u.onend = suivante;
+			u.onerror = suivante;
+			window.speechSynthesis.speak(u);
+		};
+		suivante();
+	};
+
+	Voix.prototype.taire = function () {
+		this.phrases = [];
+		this.parle = false;
+		try { window.speechSynthesis.cancel(); } catch (e) {}
+	};
+
+	/**
+	 * Markdown, liens et émojis retirés : lus tels quels, ils donnent
+	 * « étoile étoile » et « h t t p p deux points ».
+	 */
+	Voix.prototype.pourOreille = function (texte) {
+		return String(texte)
+			.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '$1')
+			.replace(/https?:\/\/\S+/g, '')
+			.replace(/[*_`#>]/g, '')
+			.replace(/^[\s-]*[-•]\s*/gm, '')
+			.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+			.replace(/\s{2,}/g, ' ')
+			// Retirer un lien laisse une espace avant le point, qui s'entend
+			// comme une hésitation. (En français l'espace reste avant ? ! : ;)
+			.replace(/\s+([.,])/g, '$1')
+			.trim();
+	};
+
+	/** Découpe en phrases, en regroupant celles qui sont trop courtes. */
+	Voix.prototype.decouper = function (texte) {
+		var brut = texte.match(/[^.!?\n]+[.!?]*/g) || [texte];
+		var out = [];
+		for (var i = 0; i < brut.length; i++) {
+			var p = brut[i].trim();
+			if (!p) continue;
+			if (out.length && (p.length < 25 || out[out.length - 1].length < 25)) {
+				out[out.length - 1] += ' ' + p;
+			} else {
+				out.push(p);
+			}
+		}
+		return out;
+	};
+
+	/** Une vraie voix de la langue choisie, locale de préférence. */
+	Voix.prototype.meilleureVoix = function () {
+		if (this.voixChoisie) return this.voixChoisie;
+		var dispo = window.speechSynthesis.getVoices() || [];
+		if (!dispo.length) return null; // la liste arrive parfois après coup
+		var courte = (this.cfg.lang || 'fr-FR').toLowerCase().split('-')[0];
+		var candidates = dispo.filter(function (v) {
+			return (v.lang || '').toLowerCase().indexOf(courte) === 0;
+		});
+		candidates.sort(function (a, b) {
+			return (b.localService ? 1 : 0) - (a.localService ? 1 : 0);
+		});
+		this.voixChoisie = candidates[0] || null;
+		return this.voixChoisie;
+	};
+
+	/* ----------------------------- Affichage --------------------------- */
+
+	/** Bandeau d'état en bas du fil : écoute, réflexion, réponse. */
+	Voix.prototype.etat = function (nom) {
+		var zone = this.racine.querySelector('.naya-messages');
+		if (!zone) return;
+		var el = this.racine.querySelector('.naya-voice-state');
+
+		if (!nom) {
+			if (el) el.remove();
+			return;
+		}
+		if (!el) {
+			el = document.createElement('div');
+			el.className = 'naya-voice-state';
+			el.setAttribute('aria-live', 'polite');
+			zone.appendChild(el);
+		}
+		var libelles = {
+			ecoute: NAYA.i18n.voiceListening,
+			reflexion: NAYA.i18n.voiceThinking,
+			parle: NAYA.i18n.voiceSpeaking,
+			silence: NAYA.i18n.voiceNoSound
+		};
+		el.className = 'naya-voice-state naya-voice-' + nom;
+		el.innerHTML = '<span class="naya-voice-orb" aria-hidden="true"><i></i><i></i><i></i></span>'
+			+ '<span class="naya-voice-label"></span>';
+		el.querySelector('.naya-voice-label').textContent = libelles[nom] || '';
+		this.chat.scroll();
+
+		// Un appui pendant que Naya parle la coupe : on n'attend jamais.
+		if (nom === 'parle') {
+			var self = this;
+			el.addEventListener('click', function () {
+				self.taire();
+				self.relancer();
+			});
+		}
+	};
+
+	/** Ce que le visiteur est en train de dire, affiché en direct. */
+	Voix.prototype.transcrire = function (texte, fini) {
+		var zone = this.racine.querySelector('.naya-messages');
+		if (!zone) return;
+		var el = this.racine.querySelector('.naya-voice-live');
+
+		if (!texte) {
+			if (el) el.remove();
+			return;
+		}
+		if (!el) {
+			el = document.createElement('div');
+			el.className = 'naya-msg naya-msg-user naya-voice-live';
+			zone.appendChild(el);
+		}
+		el.textContent = texte;
+		el.classList.toggle('naya-voice-final', !!fini);
+		this.chat.scroll();
+	};
 
 	/* --------------------- Barre du haut (mode « bar ») ----------------- */
 
@@ -1216,6 +1552,7 @@
 		if (widget && widget.classList.contains('naya-mode-bar')) {
 			var barChat = new Chat(widget, 'widget');
 			var bar = new Bar(widget, barChat);
+			new Voix(barChat, widget);
 			barChat.onReply = function () { bar.notifyReply(); };
 			barChat.onClose = function () { bar.closePanel(); };
 
@@ -1226,6 +1563,7 @@
 
 		if (widget) {
 			var chat = new Chat(widget, 'widget');
+			new Voix(chat, widget);
 			var launcher = document.getElementById('naya-launcher');
 			var win = document.getElementById('naya-window');
 
@@ -1257,7 +1595,7 @@
 
 		var page = document.getElementById('naya-page');
 		if (page) {
-			new Chat(page, 'page');
+			new Voix(new Chat(page, 'page'), page);
 		}
 	}
 

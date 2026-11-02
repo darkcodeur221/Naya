@@ -84,6 +84,13 @@ class Naya_Admin {
 		$out['teaser_delay']    = isset( $input['teaser_delay'] ) ? max( 1, min( 120, (int) $input['teaser_delay'] ) ) : 8;
 		$out['suggestions']     = isset( $input['suggestions'] ) ? sanitize_textarea_field( $input['suggestions'] ) : '';
 
+		$out['footer_note'] = isset( $input['footer_note'] ) ? sanitize_text_field( $input['footer_note'] ) : '';
+
+		$out['voice_enabled']    = empty( $input['voice_enabled'] ) ? 0 : 1;
+		$out['voice_hands_free'] = empty( $input['voice_hands_free'] ) ? 0 : 1;
+		$out['voice_lang']       = isset( $input['voice_lang'] ) ? sanitize_text_field( $input['voice_lang'] ) : 'fr-FR';
+		$out['voice_rate']       = isset( $input['voice_rate'] ) ? max( 0.7, min( 1.5, (float) $input['voice_rate'] ) ) : 1.05;
+
 		$out['wolof_enabled']    = empty( $input['wolof_enabled'] ) ? 0 : 1;
 		$out['wolof_greeting']   = empty( $input['wolof_greeting'] ) ? 0 : 1;
 		$out['wolof_suggestion'] = isset( $input['wolof_suggestion'] ) ? sanitize_text_field( $input['wolof_suggestion'] ) : '';
@@ -134,7 +141,10 @@ class Naya_Admin {
 			'bar_placeholder' => __( 'Posez votre question, je réponds en direct…', 'naya' ),
 			'sales_style' => 'balanced',
 			'wolof_enabled' => 0, 'wolof_greeting' => 1,
+			'voice_enabled' => 1, 'voice_lang' => 'fr-FR',
+			'voice_rate' => 1.05, 'voice_hands_free' => 1,
 			'wolof_suggestion' => 'Ndax am ngeen polo ?',
+			'footer_note' => '',
 		) );
 
 		$page_id  = (int) get_option( 'naya_chat_page_id' );
@@ -200,6 +210,15 @@ class Naya_Admin {
 						</td>
 					</tr>
 					<tr>
+						<th scope="row"><label for="naya_footer_note"><?php esc_html_e( 'Message sous la conversation', 'naya' ); ?></label></th>
+						<td>
+							<input type="text" id="naya_footer_note" class="large-text"
+								name="naya_settings[footer_note]" value="<?php echo esc_attr( $s['footer_note'] ); ?>"
+								placeholder="<?php esc_attr_e( 'Commander chez Feugjay, c\'est soutenir le développement de l\'IA en Afrique', 'naya' ); ?>" />
+							<p class="description"><?php esc_html_e( 'Affiché en petit à côté de « Propulsé par Deejitcorp », au bas de la conversation. Laissez vide pour n\'afficher que la signature.', 'naya' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="naya_suggestions"><?php esc_html_e( 'Suggestions rapides (une par ligne)', 'naya' ); ?></label></th>
 						<td><textarea id="naya_suggestions" name="naya_settings[suggestions]" rows="3" class="large-text"><?php echo esc_textarea( $s['suggestions'] ); ?></textarea></td>
 					</tr>
@@ -230,6 +249,52 @@ class Naya_Admin {
 						<td>
 							<input type="text" id="naya_whatsapp" name="naya_settings[whatsapp]" value="<?php echo esc_attr( $s['whatsapp'] ); ?>" class="regular-text" placeholder="221778002341" />
 							<p class="description"><?php esc_html_e( 'Format international sans + ni espaces. Naya redirige les prospects sérieux vers ce numéro (lien wa.me). Laisser vide pour désactiver.', 'naya' ); ?></p>
+						</td>
+					</tr>
+				</table>
+
+				<h2>🎙️ <?php esc_html_e( 'Mode vocal', 'naya' ); ?></h2>
+				<p class="description" style="max-width:640px;">
+					<?php esc_html_e( 'Un bouton micro apparaît dans la conversation : le visiteur parle, Naya lui répond à voix haute. Tout se passe dans son navigateur — aucun son n\'est envoyé à votre serveur. En mode vocal, Naya répond en deux ou trois phrases : c\'est ce qui rend l\'échange rapide.', 'naya' ); ?>
+				</p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Parler avec Naya', 'naya' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox" name="naya_settings[voice_enabled]" value="1" <?php checked( $s['voice_enabled'], 1 ); ?> />
+								<?php esc_html_e( 'Afficher le bouton micro', 'naya' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Le bouton ne s\'affiche que sur les navigateurs capables d\'écouter et de parler (Chrome, Edge, Android ; Safari récent). Ailleurs, rien ne change.', 'naya' ); ?>
+							</p>
+							<p style="margin-top:10px;">
+								<label>
+									<input type="checkbox" name="naya_settings[voice_hands_free]" value="1" <?php checked( $s['voice_hands_free'], 1 ); ?> />
+									<?php esc_html_e( 'Mains libres : rouvrir le micro dès que Naya a fini de parler', 'naya' ); ?>
+								</label>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_voice_lang"><?php esc_html_e( 'Langue d\'écoute', 'naya' ); ?></label></th>
+						<td>
+							<select id="naya_voice_lang" name="naya_settings[voice_lang]">
+								<option value="fr-FR" <?php selected( $s['voice_lang'], 'fr-FR' ); ?>><?php esc_html_e( 'Français', 'naya' ); ?></option>
+								<option value="fr-SN" <?php selected( $s['voice_lang'], 'fr-SN' ); ?>><?php esc_html_e( 'Français (Sénégal)', 'naya' ); ?></option>
+								<option value="en-US" <?php selected( $s['voice_lang'], 'en-US' ); ?>><?php esc_html_e( 'Anglais', 'naya' ); ?></option>
+								<option value="ar-SA" <?php selected( $s['voice_lang'], 'ar-SA' ); ?>><?php esc_html_e( 'Arabe', 'naya' ); ?></option>
+							</select>
+							<p class="description">
+								<?php esc_html_e( 'Les navigateurs ne reconnaissent pas encore le wolof : à l\'oral, c\'est le français qu\'il faut choisir. Le wolof reste disponible à l\'écrit.', 'naya' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="naya_voice_rate"><?php esc_html_e( 'Vitesse de la voix', 'naya' ); ?></label></th>
+						<td>
+							<input type="number" id="naya_voice_rate" name="naya_settings[voice_rate]" value="<?php echo esc_attr( $s['voice_rate'] ); ?>" min="0.7" max="1.5" step="0.05" />
+							<p class="description"><?php esc_html_e( '1 = vitesse normale. 1,05 donne un débit vivant sans être pressé.', 'naya' ); ?></p>
 						</td>
 					</tr>
 				</table>
