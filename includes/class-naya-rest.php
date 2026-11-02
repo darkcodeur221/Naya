@@ -49,7 +49,7 @@ class Naya_Rest {
 				'event' => array(
 					'required' => true,
 					'type'     => 'string',
-					'enum'     => Naya_Stats::EVENTS,
+					'enum'     => Naya_Stats::events(),
 				),
 			),
 		) );
@@ -208,6 +208,12 @@ class Naya_Rest {
 		Naya_Conversations::add_message( $conversation_id, 'user', $message );
 		$context = Naya_Conversations::context( $conversation_id );
 
+		/**
+		 * Message reçu, avant l'appel au modèle. Une extension peut s'en
+		 * servir pour analyser la demande (langue, intention…).
+		 */
+		do_action( 'naya_user_message', $message, $conversation_id, $context );
+
 		$reply = Naya_DeepSeek::chat( $context );
 
 		if ( is_wp_error( $reply ) ) {
@@ -221,6 +227,9 @@ class Naya_Rest {
 
 		// L'IA a-t-elle signalé une situation à traiter ? (balise retirée avant affichage)
 		list( $reply, $alert ) = Naya_Notify::extract( $reply );
+
+		/** Réponse produite, avant enregistrement et envoi au visiteur. */
+		$reply = (string) apply_filters( 'naya_reply', $reply, $conversation_id, $message );
 
 		Naya_Conversations::add_message( $conversation_id, 'assistant', $reply );
 

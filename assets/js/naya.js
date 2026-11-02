@@ -924,6 +924,13 @@
 		this.ouvertA = Date.now();
 		this.unread = 0;
 		this.renderCount();
+
+		// Une ouverture comptée par session : sans elle, le tableau de bord
+		// affichait 0 ouverture alors que les conversations, elles, montaient.
+		if (!sessionStorage.getItem('naya_opened')) {
+			sessionStorage.setItem('naya_opened', '1');
+			API.track('widget_open');
+		}
 		this.retourFocus = document.activeElement === this.input ? this.toggle : document.activeElement;
 
 		this.widget.classList.add('naya-panel-open');

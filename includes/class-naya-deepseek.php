@@ -89,7 +89,7 @@ class Naya_DeepSeek {
 			$custom = "\n\n<connaissances_admin>\n" . $settings['knowledge'] . "\n</connaissances_admin>";
 		}
 
-		return $prompt
+		$prompt = $prompt
 			. $site_context
 			. Naya_Knowledge::context()
 			. $custom
@@ -100,6 +100,16 @@ class Naya_DeepSeek {
 			// En dernier : c'est la seule partie qui change à chaque message, le
 			// début du prompt reste identique et profite du cache de DeepSeek.
 			. Naya_Catalog::context_for( $messages );
+
+		/**
+		 * Prompt système complet. Point d'extension principal : c'est ici que
+		 * l'add-on wolof greffe ses consignes de langue et ses exemples.
+		 *
+		 * @param string $prompt   Prompt assemblé.
+		 * @param array  $settings Réglages de Naya.
+		 * @param array  $messages Historique de la conversation.
+		 */
+		return (string) apply_filters( 'naya_system_prompt', $prompt, $settings, $messages );
 	}
 
 	/**

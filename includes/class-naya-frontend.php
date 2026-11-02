@@ -143,6 +143,9 @@ class Naya_Frontend {
 			),
 		);
 
+		/** Configuration envoyée au navigateur (accueil, suggestions, textes). */
+		$config = apply_filters( 'naya_frontend_config', $config, $s );
+
 		return $config;
 	}
 

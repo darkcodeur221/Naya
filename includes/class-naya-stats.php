@@ -23,9 +23,18 @@ class Naya_Stats {
 
 	const EVENTS = array( 'widget_open', 'whatsapp_click', 'link_click', 'teaser_shown', 'teaser_click' );
 
+	/**
+	 * Événements acceptés. Une extension peut en ajouter les siens —
+	 * l'add-on wolof enregistre ainsi la langue de chaque message.
+	 */
+	public static function events() {
+		$events = apply_filters( 'naya_events', self::EVENTS );
+		return array_values( array_unique( array_filter( array_map( 'strval', (array) $events ) ) ) );
+	}
+
 	public static function record( $event ) {
 		global $wpdb;
-		if ( ! in_array( $event, self::EVENTS, true ) ) {
+		if ( ! in_array( $event, self::events(), true ) ) {
 			return;
 		}
 		$wpdb->insert( $wpdb->prefix . 'naya_events', array(

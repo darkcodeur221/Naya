@@ -346,6 +346,11 @@ class Naya_Admin {
 					</tr>
 				</table>
 
+				<?php
+				// Réglages ajoutés par les extensions (section « naya »).
+				do_settings_sections( 'naya' );
+				?>
+
 				<?php submit_button(); ?>
 			</form>
 		</div>
